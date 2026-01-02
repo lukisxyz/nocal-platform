@@ -1,8 +1,18 @@
 import { HeadContent, Scripts, createRootRoute } from '@tanstack/react-router'
-import { TanStackRouterDevtoolsPanel } from '@tanstack/react-router-devtools'
-import { TanStackDevtools } from '@tanstack/react-devtools'
-
+import {
+  RainbowKitProvider,
+} from '@rainbow-me/rainbowkit'
 import appCss from '../styles.css?url'
+import { WagmiProvider } from 'wagmi'
+import { config } from '@/lib/wagmi'
+import {
+  QueryClientProvider,
+  QueryClient,
+} from "@tanstack/react-query";
+import '@rainbow-me/rainbowkit/styles.css';
+import { Toaster } from '@/components/ui/sonner'
+
+const queryClient = new QueryClient();
 
 export const Route = createRootRoute({
   head: () => ({
@@ -36,18 +46,14 @@ function RootDocument({ children }: { children: React.ReactNode }) {
         <HeadContent />
       </head>
       <body>
-        {children}
-        <TanStackDevtools
-          config={{
-            position: 'bottom-right',
-          }}
-          plugins={[
-            {
-              name: 'Tanstack Router',
-              render: <TanStackRouterDevtoolsPanel />,
-            },
-          ]}
-        />
+        <WagmiProvider config={config}>
+          <QueryClientProvider client={queryClient}>
+            <RainbowKitProvider>
+              {children}
+              <Toaster position="bottom-left" />
+            </RainbowKitProvider>
+          </QueryClientProvider>
+        </WagmiProvider>
         <Scripts />
       </body>
     </html>
