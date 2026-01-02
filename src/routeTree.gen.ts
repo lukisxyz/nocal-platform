@@ -12,6 +12,12 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as DashboardIndexRouteImport } from './routes/dashboard/index'
+import { Route as DashboardUpdateProfileRouteImport } from './routes/dashboard/update-profile'
+import { Route as DashboardUpdateBookingRouteImport } from './routes/dashboard/update-booking'
+import { Route as DashboardDangerZoneRouteImport } from './routes/dashboard/danger-zone'
+import { Route as DashboardCreateBookingRouteImport } from './routes/dashboard/create-booking'
+import { Route as ApiProfileRouteImport } from './routes/api.profile'
 import { Route as ApiAuthSplatRouteImport } from './routes/api.auth.$'
 
 const LoginRoute = LoginRouteImport.update({
@@ -29,6 +35,36 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DashboardIndexRoute = DashboardIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardUpdateProfileRoute = DashboardUpdateProfileRouteImport.update({
+  id: '/update-profile',
+  path: '/update-profile',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardUpdateBookingRoute = DashboardUpdateBookingRouteImport.update({
+  id: '/update-booking',
+  path: '/update-booking',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardDangerZoneRoute = DashboardDangerZoneRouteImport.update({
+  id: '/danger-zone',
+  path: '/danger-zone',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardCreateBookingRoute = DashboardCreateBookingRouteImport.update({
+  id: '/create-booking',
+  path: '/create-booking',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const ApiProfileRoute = ApiProfileRouteImport.update({
+  id: '/api/profile',
+  path: '/api/profile',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
   id: '/api/auth/$',
   path: '/api/auth/$',
@@ -37,35 +73,83 @@ const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/dashboard': typeof DashboardRoute
+  '/dashboard': typeof DashboardRouteWithChildren
   '/login': typeof LoginRoute
+  '/api/profile': typeof ApiProfileRoute
+  '/dashboard/create-booking': typeof DashboardCreateBookingRoute
+  '/dashboard/danger-zone': typeof DashboardDangerZoneRoute
+  '/dashboard/update-booking': typeof DashboardUpdateBookingRoute
+  '/dashboard/update-profile': typeof DashboardUpdateProfileRoute
+  '/dashboard/': typeof DashboardIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/dashboard': typeof DashboardRoute
   '/login': typeof LoginRoute
+  '/api/profile': typeof ApiProfileRoute
+  '/dashboard/create-booking': typeof DashboardCreateBookingRoute
+  '/dashboard/danger-zone': typeof DashboardDangerZoneRoute
+  '/dashboard/update-booking': typeof DashboardUpdateBookingRoute
+  '/dashboard/update-profile': typeof DashboardUpdateProfileRoute
+  '/dashboard': typeof DashboardIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/dashboard': typeof DashboardRoute
+  '/dashboard': typeof DashboardRouteWithChildren
   '/login': typeof LoginRoute
+  '/api/profile': typeof ApiProfileRoute
+  '/dashboard/create-booking': typeof DashboardCreateBookingRoute
+  '/dashboard/danger-zone': typeof DashboardDangerZoneRoute
+  '/dashboard/update-booking': typeof DashboardUpdateBookingRoute
+  '/dashboard/update-profile': typeof DashboardUpdateProfileRoute
+  '/dashboard/': typeof DashboardIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/dashboard' | '/login' | '/api/auth/$'
+  fullPaths:
+    | '/'
+    | '/dashboard'
+    | '/login'
+    | '/api/profile'
+    | '/dashboard/create-booking'
+    | '/dashboard/danger-zone'
+    | '/dashboard/update-booking'
+    | '/dashboard/update-profile'
+    | '/dashboard/'
+    | '/api/auth/$'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/dashboard' | '/login' | '/api/auth/$'
-  id: '__root__' | '/' | '/dashboard' | '/login' | '/api/auth/$'
+  to:
+    | '/'
+    | '/login'
+    | '/api/profile'
+    | '/dashboard/create-booking'
+    | '/dashboard/danger-zone'
+    | '/dashboard/update-booking'
+    | '/dashboard/update-profile'
+    | '/dashboard'
+    | '/api/auth/$'
+  id:
+    | '__root__'
+    | '/'
+    | '/dashboard'
+    | '/login'
+    | '/api/profile'
+    | '/dashboard/create-booking'
+    | '/dashboard/danger-zone'
+    | '/dashboard/update-booking'
+    | '/dashboard/update-profile'
+    | '/dashboard/'
+    | '/api/auth/$'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  DashboardRoute: typeof DashboardRoute
+  DashboardRoute: typeof DashboardRouteWithChildren
   LoginRoute: typeof LoginRoute
+  ApiProfileRoute: typeof ApiProfileRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
 }
 
@@ -92,6 +176,48 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/dashboard/': {
+      id: '/dashboard/'
+      path: '/'
+      fullPath: '/dashboard/'
+      preLoaderRoute: typeof DashboardIndexRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/update-profile': {
+      id: '/dashboard/update-profile'
+      path: '/update-profile'
+      fullPath: '/dashboard/update-profile'
+      preLoaderRoute: typeof DashboardUpdateProfileRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/update-booking': {
+      id: '/dashboard/update-booking'
+      path: '/update-booking'
+      fullPath: '/dashboard/update-booking'
+      preLoaderRoute: typeof DashboardUpdateBookingRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/danger-zone': {
+      id: '/dashboard/danger-zone'
+      path: '/danger-zone'
+      fullPath: '/dashboard/danger-zone'
+      preLoaderRoute: typeof DashboardDangerZoneRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/create-booking': {
+      id: '/dashboard/create-booking'
+      path: '/create-booking'
+      fullPath: '/dashboard/create-booking'
+      preLoaderRoute: typeof DashboardCreateBookingRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/api/profile': {
+      id: '/api/profile'
+      path: '/api/profile'
+      fullPath: '/api/profile'
+      preLoaderRoute: typeof ApiProfileRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/auth/$': {
       id: '/api/auth/$'
       path: '/api/auth/$'
@@ -102,10 +228,31 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface DashboardRouteChildren {
+  DashboardCreateBookingRoute: typeof DashboardCreateBookingRoute
+  DashboardDangerZoneRoute: typeof DashboardDangerZoneRoute
+  DashboardUpdateBookingRoute: typeof DashboardUpdateBookingRoute
+  DashboardUpdateProfileRoute: typeof DashboardUpdateProfileRoute
+  DashboardIndexRoute: typeof DashboardIndexRoute
+}
+
+const DashboardRouteChildren: DashboardRouteChildren = {
+  DashboardCreateBookingRoute: DashboardCreateBookingRoute,
+  DashboardDangerZoneRoute: DashboardDangerZoneRoute,
+  DashboardUpdateBookingRoute: DashboardUpdateBookingRoute,
+  DashboardUpdateProfileRoute: DashboardUpdateProfileRoute,
+  DashboardIndexRoute: DashboardIndexRoute,
+}
+
+const DashboardRouteWithChildren = DashboardRoute._addFileChildren(
+  DashboardRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  DashboardRoute: DashboardRoute,
+  DashboardRoute: DashboardRouteWithChildren,
   LoginRoute: LoginRoute,
+  ApiProfileRoute: ApiProfileRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
 }
 export const routeTree = rootRouteImport
