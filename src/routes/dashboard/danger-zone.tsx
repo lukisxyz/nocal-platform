@@ -14,6 +14,8 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { ArrowLeft, AlertTriangle } from 'lucide-react'
+import { useDeleteAccount } from '@/queries/use-account-mutations'
+import { toast } from 'sonner'
 
 export const Route = createFileRoute('/dashboard/danger-zone')({
   component: RouteComponent,
@@ -25,7 +27,8 @@ export const Route = createFileRoute('/dashboard/danger-zone')({
 function RouteComponent() {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
   const [confirmationText, setConfirmationText] = useState('')
-  const [isDeleting, setIsDeleting] = useState(false)
+
+  const deleteAccountMutation = useDeleteAccount()
 
   const handleDeleteClick = () => {
     setShowDeleteDialog(true)
@@ -33,14 +36,17 @@ function RouteComponent() {
 
   const handleConfirmDelete = async () => {
     if (confirmationText !== 'I delete this account') {
-      alert('Please type "I delete this account" to confirm')
+      toast.error('Please type "I delete this account" to confirm')
       return
     }
 
-    setIsDeleting(true)
-    await new Promise(resolve => setTimeout(resolve, 1000))
-    setIsDeleting(false)
-    setShowDeleteDialog(false)
+    try {
+      await deleteAccountMutation.mutateAsync()
+      setShowDeleteDialog(false)
+      toast.success('Account deleted successfully')
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Failed to delete account')
+    }
   }
 
   return (
@@ -94,9 +100,9 @@ function RouteComponent() {
                 variant="destructive"
                 onClick={handleDeleteClick}
                 className="w-full"
-                disabled={isDeleting}
+                disabled={deleteAccountMutation.isPending}
               >
-                {isDeleting ? 'Deleting...' : 'Delete My Account'}
+                {deleteAccountMutation.isPending ? 'Deleting...' : 'Delete My Account'}
               </Button>
             </div>
           </CardContent>
@@ -132,7 +138,7 @@ function RouteComponent() {
                 onChange={(e) => setConfirmationText(e.target.value)}
                 placeholder='Type "I delete this account"'
                 className="bg-white border-gray-300 text-gray-900"
-                disabled={isDeleting}
+                disabled={deleteAccountMutation.isPending}
               />
             </div>
           </div>
@@ -141,16 +147,16 @@ function RouteComponent() {
             <Button
               variant="outline"
               onClick={() => setShowDeleteDialog(false)}
-              disabled={isDeleting}
+              disabled={deleteAccountMutation.isPending}
             >
               Cancel
             </Button>
             <Button
               variant="destructive"
               onClick={handleConfirmDelete}
-              disabled={confirmationText !== 'I delete this account' || isDeleting}
+              disabled={confirmationText !== 'I delete this account' || deleteAccountMutation.isPending}
             >
-              {isDeleting ? 'Deleting...' : 'Delete Account'}
+              {deleteAccountMutation.isPending ? 'Deleting...' : 'Delete Account'}
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -22,6 +22,7 @@ import { BOOKING_TYPES, TOKEN_TYPES, SESSION_DURATIONS, TIME_BREAKS } from '@/li
 import { useBookingSession } from '@/queries/use-booking-sessions'
 import { useUpdateBookingSession, useDeleteBookingSession } from '@/queries/use-booking-mutations'
 import { ArrowLeft, DollarSign, Gift, CreditCard, Coins, AlertTriangle, Calendar } from 'lucide-react'
+import { toast } from 'sonner'
 
 const DAYS_OF_WEEK = [
   { value: 0, label: 'Sunday' },
@@ -174,12 +175,17 @@ function RouteComponent() {
 
   const handleConfirmDelete = async () => {
     if (confirmationText !== 'DELETE') {
-      alert('Please type "DELETE" to confirm')
+      toast.error('Please type "DELETE" to confirm')
       return
     }
 
-    deleteSession.mutate(bookingId!)
-    setShowDeleteDialog(false)
+    try {
+      await deleteSession.mutateAsync(bookingId!)
+      setShowDeleteDialog(false)
+      toast.success('Booking session deleted successfully')
+    } catch (error) {
+      toast.error('Failed to delete booking session. Please try again.')
+    }
   }
 
   const bookingTypeInfo = {
@@ -550,6 +556,7 @@ function RouteComponent() {
                   </p>
                 </div>
                 <Button
+                  type='button'
                   variant="destructive"
                   onClick={() => setShowDeleteDialog(true)}
                 >

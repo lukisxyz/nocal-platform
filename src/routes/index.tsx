@@ -9,11 +9,16 @@ export const Route = createFileRoute('/')({
 function Home() {
   return (
     <div className="min-h-screen">
-      <div>
+      <div className='w-full bg-[#f5f5f5] shadow-amber-50 shadow-md'>
         <nav className='max-w-5xl mx-auto p-3.5 flex items-center justify-between gap-3.5'>
-          <Link to="/" className="flex items-center space-x-1.5 rtl:space-x-reverse">
+          <Link to="/" className="self-center text-xl font-black whitespace-nowrap text-heading flex items-center rtl:space-x-reverse">
             <img src="/favicon-96x96.png" className="h-7" alt="NoCal Platform Logo" />
-            <span className="self-center text-xl font-semibold whitespace-nowrap text-heading">NoCal</span>
+            <span className="text-amber-700">
+              No
+            </span>
+            <span className='text-neutral-500'>
+              Cal
+            </span>
           </Link>
           <div className='flex items-center justify-end gap-7'>
             <a href="/#why" className='hover-underline-animation text-gray-700'>

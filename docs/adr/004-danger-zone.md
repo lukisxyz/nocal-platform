@@ -89,18 +89,21 @@ We implemented a dedicated danger zone page (`/dashboard/danger-zone`) with mult
 ```typescript
 - react (useState hook)
 - @tanstack/react-router (Link, navigation)
+- @tanstack/react-query (useMutation for API calls)
 - @/components/ui/card (Card, CardContent, CardDescription, CardHeader, CardTitle)
 - @/components/ui/button (Button with variants)
 - @/components/ui/input (Input component)
 - @/components/ui/dialog (Dialog, DialogPortal, DialogOverlay, etc.)
 - lucide-react (ArrowLeft, AlertTriangle icons)
+- @/queries/use-account-mutations (useDeleteAccount hook)
 ```
 
 ### State Flow
 ```typescript
 const [showDeleteDialog, setShowDeleteDialog] = useState(false)
 const [confirmationText, setConfirmationText] = useState('')
-const [isDeleting, setIsDeleting] = useState(false)
+
+const deleteAccountMutation = useDeleteAccount()
 ```
 
 ### Confirmation Logic
@@ -111,11 +114,12 @@ const handleConfirmDelete = async () => {
     return
   }
 
-  setIsDeleting(true)
-  // TODO: Implement account deletion
-  await deleteAccount()
-  setIsDeleting(false)
-  setShowDeleteDialog(false)
+  try {
+    await deleteAccountMutation.mutateAsync()
+    setShowDeleteDialog(false)
+  } catch (error) {
+    alert(error instanceof Error ? error.message : 'Failed to delete account')
+  }
 }
 ```
 
@@ -124,11 +128,24 @@ const handleConfirmDelete = async () => {
 <Button
   variant="destructive"
   onClick={handleDeleteClick}
-  disabled={isDeleting}
+  disabled={deleteAccountMutation.isPending}
 >
-  {isDeleting ? 'Deleting...' : 'Delete My Account'}
+  {deleteAccountMutation.isPending ? 'Deleting...' : 'Delete My Account'}
 </Button>
 ```
+
+### API Integration
+The account deletion uses a mutation hook that:
+1. Makes DELETE request to `/api/account`
+2. Clears the query cache on success
+3. Navigates to login page
+4. Handles errors with user feedback
+
+### Backend Service
+- `src/lib/server/account-service.ts`: Core business logic
+- `deleteAccount()`: Deletes user record (cascades to all related data)
+- Uses Drizzle ORM with PostgreSQL
+- Includes proper error handling and validation
 
 ## Security Considerations
 
@@ -155,15 +172,29 @@ const handleConfirmDelete = async () => {
 
 ## Database Deletion Strategy
 
-### Cascade Deletion Order
-When account is deleted, the following should occur in order:
-1. Delete all `booking` records (cascades from mentor_profile)
-2. Delete all `booking_session` records (cascades from mentor_profile)
-3. Delete `mentor_profile` record
-4. Delete all `session` records (cascades from user)
-5. Delete all `account` records (cascades from user)
-6. Delete all `wallet_address` records (cascades from user)
-7. Delete `user` record
+### Cascade Deletion Implementation
+The database schema uses PostgreSQL foreign key constraints with `ON DELETE CASCADE`, ensuring complete data removal when a user is deleted:
+
+```typescript
+// Deletion order (automatic via cascade):
+1. mentor_availability → mentor_profile (CASCADE)
+2. booking_session → mentor_profile (CASCADE)
+3. booking → booking_session (CASCADE)
+4. booking → mentor_profile (CASCADE)
+5. booking → user (menteeId, CASCADE)
+6. mentor_profile → user (CASCADE)
+7. wallet_address → user (CASCADE)
+8. session → user (CASCADE)
+9. account → user (CASCADE)
+10. user (DELETE)
+```
+
+### Backend Implementation
+The `deleteAccount()` function in `account-service.ts`:
+1. Validates user exists
+2. Deletes the user record using `db.delete(user).where(eq(user.id, userId))`
+3. Database automatically handles cascade deletion
+4. Returns success response
 
 ### Smart Contract Considerations
 For commitment-based bookings:
@@ -171,6 +202,12 @@ For commitment-based bookings:
 - Either:
   - Prevent deletion until commitments are resolved, OR
   - Implement automatic refund mechanism via smart contract
+
+### Data Integrity
+- Foreign key constraints ensure referential integrity
+- No orphaned records possible
+- All related data removed automatically
+- No manual deletion of related records needed
 
 ## References
 - [Radix UI Dialog](https://www.radix-ui.com/docs/primitives/components/dialog)

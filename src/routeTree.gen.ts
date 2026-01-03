@@ -16,12 +16,13 @@ import { Route as DashboardIndexRouteImport } from './routes/dashboard/index'
 import { Route as DashboardUpdateProfileRouteImport } from './routes/dashboard/update-profile'
 import { Route as DashboardDangerZoneRouteImport } from './routes/dashboard/danger-zone'
 import { Route as DashboardCreateBookingRouteImport } from './routes/dashboard/create-booking'
-import { Route as ApiProfileRouteImport } from './routes/api.profile'
-import { Route as ApiBookingRouteImport } from './routes/api.booking'
+import { Route as ApiProfileRouteImport } from './routes/api/profile'
+import { Route as ApiBookingRouteImport } from './routes/api/booking'
+import { Route as ApiAccountRouteImport } from './routes/api/account'
 import { Route as DashboardUpdateBookingBookingIdRouteImport } from './routes/dashboard/update-booking.$bookingId'
-import { Route as ApiBookingCreateRouteImport } from './routes/api.booking.create'
-import { Route as ApiBookingBookingIdRouteImport } from './routes/api.booking.$bookingId'
-import { Route as ApiAuthSplatRouteImport } from './routes/api.auth.$'
+import { Route as ApiBookingCreateRouteImport } from './routes/api/booking.create'
+import { Route as ApiBookingBookingIdRouteImport } from './routes/api/booking.$bookingId'
+import { Route as ApiAuthSplatRouteImport } from './routes/api/auth.$'
 
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
@@ -68,6 +69,11 @@ const ApiBookingRoute = ApiBookingRouteImport.update({
   path: '/api/booking',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiAccountRoute = ApiAccountRouteImport.update({
+  id: '/api/account',
+  path: '/api/account',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const DashboardUpdateBookingBookingIdRoute =
   DashboardUpdateBookingBookingIdRouteImport.update({
     id: '/update-booking/$bookingId',
@@ -94,6 +100,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRouteWithChildren
   '/login': typeof LoginRoute
+  '/api/account': typeof ApiAccountRoute
   '/api/booking': typeof ApiBookingRouteWithChildren
   '/api/profile': typeof ApiProfileRoute
   '/dashboard/create-booking': typeof DashboardCreateBookingRoute
@@ -108,6 +115,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
+  '/api/account': typeof ApiAccountRoute
   '/api/booking': typeof ApiBookingRouteWithChildren
   '/api/profile': typeof ApiProfileRoute
   '/dashboard/create-booking': typeof DashboardCreateBookingRoute
@@ -124,6 +132,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRouteWithChildren
   '/login': typeof LoginRoute
+  '/api/account': typeof ApiAccountRoute
   '/api/booking': typeof ApiBookingRouteWithChildren
   '/api/profile': typeof ApiProfileRoute
   '/dashboard/create-booking': typeof DashboardCreateBookingRoute
@@ -141,6 +150,7 @@ export interface FileRouteTypes {
     | '/'
     | '/dashboard'
     | '/login'
+    | '/api/account'
     | '/api/booking'
     | '/api/profile'
     | '/dashboard/create-booking'
@@ -155,6 +165,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/login'
+    | '/api/account'
     | '/api/booking'
     | '/api/profile'
     | '/dashboard/create-booking'
@@ -170,6 +181,7 @@ export interface FileRouteTypes {
     | '/'
     | '/dashboard'
     | '/login'
+    | '/api/account'
     | '/api/booking'
     | '/api/profile'
     | '/dashboard/create-booking'
@@ -186,6 +198,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   DashboardRoute: typeof DashboardRouteWithChildren
   LoginRoute: typeof LoginRoute
+  ApiAccountRoute: typeof ApiAccountRoute
   ApiBookingRoute: typeof ApiBookingRouteWithChildren
   ApiProfileRoute: typeof ApiProfileRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
@@ -254,6 +267,13 @@ declare module '@tanstack/react-router' {
       path: '/api/booking'
       fullPath: '/api/booking'
       preLoaderRoute: typeof ApiBookingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/account': {
+      id: '/api/account'
+      path: '/api/account'
+      fullPath: '/api/account'
+      preLoaderRoute: typeof ApiAccountRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/dashboard/update-booking/$bookingId': {
@@ -325,6 +345,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   DashboardRoute: DashboardRouteWithChildren,
   LoginRoute: LoginRoute,
+  ApiAccountRoute: ApiAccountRoute,
   ApiBookingRoute: ApiBookingRouteWithChildren,
   ApiProfileRoute: ApiProfileRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
