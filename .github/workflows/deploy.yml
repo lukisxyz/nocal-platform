@@ -54,14 +54,23 @@ jobs:
           script: |
             cd /var/www/nocal
 
+            # Ensure proper ownership
+            sudo chown -R $USER:$USER /var/www/nocal
+
+            # Add git safe directory
+            git config --global --add safe.directory /var/www/nocal
+
             # Backup current version
             if [ -d .output ]; then
-              cp -r .output /var/www/nocal/.output.backup.$(date +%Y%m%d_%H%M%S)
+              sudo cp -r .output .output.backup.$(date +%Y%m%d_%H%M%S)
             fi
 
             # Pull latest changes
             git fetch origin master
             git reset --hard origin/master
+
+            # Ensure proper ownership after git operations
+            sudo chown -R $USER:$USER /var/www/nocal
 
             # Install dependencies if package.json changed
             if [ package.json -nt .last_deps_install ]; then
@@ -71,6 +80,9 @@ jobs:
 
             # Build application
             pnpm build
+
+            # Ensure proper ownership of build output
+            sudo chown -R $USER:$USER /var/www/nocal
 
             # Restart service
             sudo systemctl restart nocal
@@ -86,8 +98,9 @@ jobs:
               echo "Service failed to start, restoring backup..."
               sudo systemctl stop nocal
               if [ -d .output.backup.* ]; then
-                rm -rf .output
-                cp -r .output.backup.* .output
+                sudo rm -rf .output
+                sudo cp -r .output.backup.* .output
+                sudo chown -R $USER:$USER /var/www/nocal
               fi
               sudo systemctl start nocal
               exit 1
@@ -122,7 +135,7 @@ jobs:
           script: |
             # Keep only last 5 backups
             cd /var/www/nocal
-            ls -t .output.backup.* 2>/dev/null | tail -n +6 | xargs -r rm -rf
+            sudo ls -t .output.backup.* 2>/dev/null | tail -n +6 | xargs -r sudo rm -rf
 
   notify:
     runs-on: ubuntu-latest
