@@ -1,0 +1,23 @@
+[Unit]
+Description=NoCal Platform
+After=network.target
+
+[Service]
+Type=simple
+User=www-data
+WorkingDirectory=/var/www/nocal/.output/server
+Environment=NODE_ENV=production
+EnvironmentFile=/var/www/nocal/.env.production
+ExecStart=/usr/bin/node index.mjs
+Restart=always
+RestartSec=5
+
+# Security settings
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=strict
+ProtectHome=yes
+ReadWritePaths=/var/www/nocal/.output/server
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,142 @@
+name: Deploy to VPS
+
+on:
+  push:
+    branches:
+      - master
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - name: Install pnpm
+        run: npm install -g pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build application
+        run: pnpm build
+        env:
+          VITE_WALLETCONNECT_PROJECT_ID: ${{ secrets.VITE_WALLETCONNECT_PROJECT_ID }}
+          VITE_USDC_TOKEN_ADDRESS: ${{ secrets.VITE_USDC_TOKEN_ADDRESS }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+
+      - name: Prepare deployment package
+        run: |
+          mkdir -p deployment-package
+          cp -r .output deployment-package/
+          cp package.json deployment-package/
+          cp pnpm-lock.yaml deployment-package/
+          cp .env.production deployment-package/ 2>/dev/null || echo "No production env file" # Create if doesn't exist
+          tar -czf nocal-platform.tar.gz -C deployment-package .
+
+      - name: Deploy to VPS via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ secrets.VPS_PORT || 22 }}
+          script: |
+            cd /var/www/nocal
+
+            # Backup current version
+            if [ -d .output ]; then
+              cp -r .output /var/www/nocal/.output.backup.$(date +%Y%m%d_%H%M%S)
+            fi
+
+            # Pull latest changes
+            git fetch origin master
+            git reset --hard origin/master
+
+            # Install dependencies if package.json changed
+            if [ package.json -nt .last_deps_install ]; then
+              pnpm install --frozen-lockfile
+              touch .last_deps_install
+            fi
+
+            # Build application
+            pnpm build
+
+            # Restart service
+            sudo systemctl restart nocal
+
+            # Wait for service to be healthy
+            sleep 5
+
+            # Check service status
+            sudo systemctl status nocal --no-pager
+
+            # If service failed, restore backup
+            if ! sudo systemctl is-active --quiet nocal; then
+              echo "Service failed to start, restoring backup..."
+              sudo systemctl stop nocal
+              if [ -d .output.backup.* ]; then
+                rm -rf .output
+                cp -r .output.backup.* .output
+              fi
+              sudo systemctl start nocal
+              exit 1
+            fi
+
+      - name: Verify deployment
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ secrets.VPS_PORT || 22 }}
+          script: |
+            # Wait for app to be ready
+            sleep 10
+
+            # Check if service is running
+            sudo systemctl is-active nocal
+
+            # Check if app responds
+            curl -f http://localhost:3000 || exit 1
+
+            echo "Deployment successful!"
+
+      - name: Cleanup old backups
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ secrets.VPS_PORT || 22 }}
+          script: |
+            # Keep only last 5 backups
+            cd /var/www/nocal
+            ls -t .output.backup.* 2>/dev/null | tail -n +6 | xargs -r rm -rf
+
+  notify:
+    runs-on: ubuntu-latest
+    needs: deploy
+    if: always()
+
+    steps:
+      - name: Notify on success
+        if: needs.deploy.result == 'success'
+        run: |
+          echo "✅ Deployment to VPS successful!"
+          echo "Visit your application at: https://your-domain.com"
+
+      - name: Notify on failure
+        if: needs.deploy.result == 'failure'
+        run: |
+          echo "❌ Deployment to VPS failed!"
+          echo "Please check the logs and fix the issues."
+          exit 1

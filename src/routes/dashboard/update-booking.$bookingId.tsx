@@ -80,7 +80,18 @@ function RouteComponent() {
       setValue('title', session.title)
       setValue('description', session.description)
       setValue('type', session.type as any)
-      setValue('token', (session.token || 'USDC') as any)
+
+      const normalizeToken = (token: string | null) => {
+        if (!token) return 'USDC'
+        const tokenMap: Record<string, string> = {
+          'USDC': 'USDC',
+          'USDT': 'USDT',
+          'mockUSDC': 'MOCK_USDC',
+          'mockUSDT': 'MOCK_USDT',
+        }
+        return tokenMap[token] || 'USDC'
+      }
+      setValue('token', normalizeToken(session.token) as any)
       setValue('price', session.price || '')
       setValue('duration', session.duration.toString())
       setValue('timeBreak', session.timeBreak.toString())
@@ -100,11 +111,14 @@ function RouteComponent() {
         session.availability.forEach((avail) => {
           const index = updatedAvailability.findIndex(d => d.dayOfWeek === avail.dayOfWeek)
           if (index !== -1) {
+            const formatTime = (time: string) => {
+              return time.split(':').slice(0, 2).join(':')
+            }
             updatedAvailability[index] = {
               dayOfWeek: avail.dayOfWeek,
               enabled: true,
-              startTime: avail.startTime,
-              endTime: avail.endTime,
+              startTime: formatTime(avail.startTime),
+              endTime: formatTime(avail.endTime),
               duration: avail.duration.toString(),
               timeBreak: avail.timeBreak.toString(),
             }
@@ -130,6 +144,16 @@ function RouteComponent() {
   const onSubmit = (data: UpdateBookingFormData) => {
     const enabledDays = data.availability.filter(day => day.enabled)
 
+    const denormalizeToken = (token: string) => {
+      const tokenMap: Record<string, string> = {
+        'USDC': 'USDC',
+        'USDT': 'USDT',
+        'MOCK_USDC': 'mockUSDC',
+        'MOCK_USDT': 'mockUSDT',
+      }
+      return tokenMap[token] || 'USDC'
+    }
+
     updateSession.mutate({
       sessionId: bookingId!,
       data: {
@@ -137,7 +161,7 @@ function RouteComponent() {
           title: data.title,
           description: data.description,
           type: data.type,
-          token: data.type !== 'FREE' ? data.token : undefined,
+          token: data.type !== 'FREE' ? denormalizeToken(data.token) : undefined,
           price: data.type !== 'FREE' ? data.price : undefined,
           duration: parseInt(data.duration),
           timeBreak: parseInt(data.timeBreak),
@@ -378,28 +402,20 @@ function RouteComponent() {
               <CardContent className="space-y-6">
                 <div className="space-y-2">
                   <Label htmlFor="token" className="text-gray-800">Token</Label>
-                  <Select
-                    value={watch('token')}
-                    onValueChange={(value) => setValue('token', value as any)}
-                  >
-                    <SelectTrigger className="bg-gray-50 border-gray-300 text-gray-900">
-                      <SelectValue placeholder="Select token" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-gray-50 border-gray-300">
-                      {Object.values(TOKEN_TYPES).map((token) => (
-                        <SelectItem
-                          key={token}
-                          value={token}
-                          className="text-gray-900 focus:bg-gray-100 focus:text-gray-900"
-                        >
-                          <div className="flex items-center gap-2">
-                            <img src="/usd-coin-usdc-logo.svg" alt={token} className="h-5 w-5" />
-                            {token}
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <div className="relative">
+                    <Input
+                      id="token"
+                      type="text"
+                      value="USDC"
+                      readOnly
+                      className="bg-gray-100 border-gray-300 text-gray-900 cursor-not-allowed pl-20"
+                      {...register('token')}
+                    />
+                    <div className="absolute left-3 top-1/2 -translate-y-1/2 flex items-center gap-2">
+                      <img src="/usd-coin-usdc-logo.svg" alt="USDC" className="h-6 w-6" />
+                      <span className="text-sm font-medium text-gray-700">USDC</span>
+                    </div>
+                  </div>
                   {errors.token && (
                     <p className="text-sm text-destructive">{errors.token.message}</p>
                   )}
@@ -409,21 +425,15 @@ function RouteComponent() {
                   <Label htmlFor="price" className="text-gray-800">
                     {watchedType === 'COMMITMENT' ? 'Commitment Fee Amount' : 'Price'}
                   </Label>
-                  <div className="relative">
-                    <Input
-                      id="price"
-                      type="number"
-                      step="0.000001"
-                      min="0"
-                      placeholder="0.000000"
-                      className="bg-gray-50 border-gray-300 text-gray-900 pl-24"
-                      {...register('price')}
-                    />
-                    <div className="absolute left-3 top-1/2 -translate-y-1/2 flex items-center gap-2">
-                      <img src="/usd-coin-usdc-logo.svg" alt="USDC" className="h-6 w-6" />
-                      <span className="text-sm font-medium text-gray-700">{watch('token') || 'USDC'}</span>
-                    </div>
-                  </div>
+                  <Input
+                    id="price"
+                    type="number"
+                    step="0.000001"
+                    min="0"
+                    placeholder="0.000000"
+                    className="bg-gray-50 border-gray-300 text-gray-900"
+                    {...register('price')}
+                  />
                   {errors.price && (
                     <p className="text-sm text-destructive">{errors.price.message}</p>
                   )}

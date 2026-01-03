@@ -297,21 +297,15 @@ function RouteComponent() {
                   <Label htmlFor="price" className="text-gray-700">
                     {watchedType === 'COMMITMENT' ? 'Commitment Fee Amount' : 'Price'}
                   </Label>
-                  <div className="relative">
-                    <Input
-                      id="price"
-                      type="number"
-                      step="0.000001"
-                      min="0"
-                      placeholder="0.000000"
-                      className="bg-white border-gray-300 text-gray-900 pl-24"
-                      {...register('price')}
-                    />
-                    <div className="absolute left-3 top-1/2 -translate-y-1/2 flex items-center gap-2">
-                      <img src="/usd-coin-usdc-logo.svg" alt="USDC" className="h-6 w-6" />
-                      <span className="text-sm font-medium text-gray-700">USDC</span>
-                    </div>
-                  </div>
+                  <Input
+                    id="price"
+                    type="number"
+                    step="0.000001"
+                    min="0"
+                    placeholder="0.000000"
+                    className="bg-white border-gray-300 text-gray-900"
+                    {...register('price')}
+                  />
                   {errors.price && (
                     <p className="text-sm text-destructive">{errors.price.message}</p>
                   )}

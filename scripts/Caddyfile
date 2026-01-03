@@ -1,0 +1,27 @@
+# Replace YOUR_DOMAIN with your actual domain
+YOUR_DOMAIN {
+    # Enable automatic HTTPS
+    encode gzip
+
+    # Reverse proxy to the Node.js app
+    reverse_proxy localhost:3000
+
+    # Security headers
+    header {
+        # Enable HSTS
+        Strict-Transport-Security "max-age=31536000;"
+        # Remove server information
+        -Server
+        # X-Content-Type-Options
+        X-Content-Type-Options "nosniff"
+        # X-Frame-Options
+        X-Frame-Options "DENY"
+        # X-XSS-Protection
+        X-XSS-Protection "1; mode=block"
+    }
+
+    # Access logs
+    log {
+        output file /var/log/caddy/YOUR_DOMAIN.log
+    }
+}

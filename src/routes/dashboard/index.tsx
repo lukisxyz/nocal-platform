@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Calendar, DollarSign, Users, Clock } from 'lucide-react'
 import { useBookingSessions } from '@/queries/use-booking-sessions'
+import { useSignOut } from '@/queries/use-sign-out'
 
 export const Route = createFileRoute('/dashboard/')({
   component: RouteComponent,
@@ -16,6 +17,7 @@ export const Route = createFileRoute('/dashboard/')({
 
 function RouteComponent() {
   const { data: bookingSessions, isLoading, error } = useBookingSessions()
+  const signOut = useSignOut()
 
   const stats = {
     totalSessions: bookingSessions?.length || 0,
@@ -44,6 +46,13 @@ function RouteComponent() {
             <Link to="/dashboard/create-booking">
               <Button>Create Booking</Button>
             </Link>
+            <Button
+              variant="outline"
+              onClick={() => signOut.mutate()}
+              disabled={signOut.isPending}
+            >
+              {signOut.isPending ? 'Signing out...' : 'Sign Out'}
+            </Button>
           </div>
         </div>
 
