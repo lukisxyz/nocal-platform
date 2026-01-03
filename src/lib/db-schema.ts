@@ -6,6 +6,7 @@ import {
   boolean,
   integer,
   index,
+  time,
 } from "drizzle-orm/pg-core";
 
 export const user = pgTable("user", {
@@ -17,7 +18,7 @@ export const user = pgTable("user", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at")
     .defaultNow()
-    .$onUpdate(() => /* @__PURE__ */ new Date())
+    .$onUpdate(() => new Date())
     .notNull(),
 });
 
@@ -29,7 +30,7 @@ export const session = pgTable(
     token: text("token").notNull().unique(),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at")
-      .$onUpdate(() => /* @__PURE__ */ new Date())
+      .$onUpdate(() => new Date())
       .notNull(),
     ipAddress: text("ip_address"),
     userAgent: text("user_agent"),
@@ -58,7 +59,7 @@ export const account = pgTable(
     password: text("password"),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at")
-      .$onUpdate(() => /* @__PURE__ */ new Date())
+      .$onUpdate(() => new Date())
       .notNull(),
   },
   (table) => [index("account_userId_idx").on(table.userId)],
@@ -74,7 +75,7 @@ export const verification = pgTable(
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at")
       .defaultNow()
-      .$onUpdate(() => /* @__PURE__ */ new Date())
+      .$onUpdate(() => new Date())
       .notNull(),
   },
   (table) => [index("verification_identifier_idx").on(table.identifier)],
@@ -122,7 +123,6 @@ export const walletAddressRelations = relations(walletAddress, ({ one }) => ({
   }),
 }));
 
-// Mentor profile extension
 export const mentorProfile = pgTable("mentor_profile", {
   id: text("id").primaryKey(),
   userId: text("user_id")
@@ -137,7 +137,7 @@ export const mentorProfile = pgTable("mentor_profile", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at")
     .defaultNow()
-    .$onUpdate(() => /* @__PURE__ */ new Date())
+    .$onUpdate(() => new Date())
     .notNull(),
 }, (table) => [index("mentorProfile_userId_idx").on(table.userId)]);
 
@@ -148,20 +148,41 @@ export const bookingSession = pgTable("booking_session", {
     .references(() => mentorProfile.id, { onDelete: "cascade" }),
   title: text("title").notNull(),
   description: text("description"),
-  type: text("type").notNull(), // 'FREE', 'PAID', 'COMMITMENT'
-  token: text("token").notNull(), // 'USDC', 'USDT', 'mockUSDC', 'mockUSDT'
-  price: text("price"), // stored as string for decimal precision
-  duration: integer("duration").notNull(), // in minutes
-  timeBreak: integer("time_break").notNull().default(5), // in minutes
+  type: text("type").notNull(),
+  token: text("token").notNull(),
+  price: text("price"),
+  duration: integer("duration").notNull(),
+  timeBreak: integer("time_break").notNull().default(5),
   isActive: boolean("is_active").default(true).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at")
     .defaultNow()
-    .$onUpdate(() => /* @__PURE__ */ new Date())
+    .$onUpdate(() => new Date())
     .notNull(),
 }, (table) => [
   index("bookingSession_mentorId_idx").on(table.mentorId),
   index("bookingSession_type_idx").on(table.type),
+]);
+
+export const mentorAvailability = pgTable("mentor_availability", {
+  id: text("id").primaryKey(),
+  mentorId: text("mentor_id")
+    .notNull()
+    .references(() => mentorProfile.id, { onDelete: "cascade" }),
+  dayOfWeek: integer("day_of_week").notNull(),
+  startTime: time("start_time").notNull(),
+  endTime: time("end_time").notNull(),
+  duration: integer("duration").notNull(),
+  timeBreak: integer("time_break").notNull().default(5),
+  isActive: boolean("is_active").default(true).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at")
+    .defaultNow()
+    .$onUpdate(() => new Date())
+    .notNull(),
+}, (table) => [
+  index("mentorAvailability_mentorId_idx").on(table.mentorId),
+  index("mentorAvailability_day_idx").on(table.dayOfWeek),
 ]);
 
 export const booking = pgTable("booking", {
@@ -176,14 +197,14 @@ export const booking = pgTable("booking", {
     .notNull()
     .references(() => mentorProfile.id, { onDelete: "cascade" }),
   scheduledAt: timestamp("scheduled_at").notNull(),
-  status: text("status").notNull().default('pending'), // 'pending', 'confirmed', 'completed', 'cancelled', 'refunded'
+  status: text("status").notNull().default('pending'),
   paymentTxHash: text("payment_tx_hash"),
   paymentAmount: text("payment_amount"),
   token: text("token"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at")
     .defaultNow()
-    .$onUpdate(() => /* @__PURE__ */ new Date())
+    .$onUpdate(() => new Date())
     .notNull(),
 }, (table) => [
   index("booking_menteeId_idx").on(table.menteeId),
@@ -199,6 +220,7 @@ export const mentorProfileRelations = relations(mentorProfile, ({ one, many }) =
   }),
   bookingSessions: many(bookingSession),
   bookings: many(booking),
+  availability: many(mentorAvailability),
 }));
 
 export const bookingSessionRelations = relations(bookingSession, ({ one, many }) => ({
@@ -222,4 +244,11 @@ export const bookingRelations = relations(booking, ({ one }) => ({
     fields: [booking.bookingSessionId],
     references: [bookingSession.id],
   }),
-}));;
+}));
+
+export const mentorAvailabilityRelations = relations(mentorAvailability, ({ one }) => ({
+  mentor: one(mentorProfile, {
+    fields: [mentorAvailability.mentorId],
+    references: [mentorProfile.id],
+  }),
+}));

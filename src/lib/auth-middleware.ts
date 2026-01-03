@@ -19,3 +19,16 @@ export const authMiddleware = createMiddleware().server(
     })
   }
 );
+
+export const loginMiddleware = createMiddleware().server(
+  async ({ next }) => {
+    const headers = getRequestHeaders();
+    const session = await auth.api.getSession({ headers })
+
+    if (session) {
+      throw redirect({ to: "/dashboard" })
+    }
+
+    return await next()
+  }
+);

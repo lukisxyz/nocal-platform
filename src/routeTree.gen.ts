@@ -18,6 +18,9 @@ import { Route as DashboardUpdateBookingRouteImport } from './routes/dashboard/u
 import { Route as DashboardDangerZoneRouteImport } from './routes/dashboard/danger-zone'
 import { Route as DashboardCreateBookingRouteImport } from './routes/dashboard/create-booking'
 import { Route as ApiProfileRouteImport } from './routes/api.profile'
+import { Route as ApiBookingRouteImport } from './routes/api.booking'
+import { Route as ApiBookingCreateRouteImport } from './routes/api.booking.create'
+import { Route as ApiBookingBookingIdRouteImport } from './routes/api.booking.$bookingId'
 import { Route as ApiAuthSplatRouteImport } from './routes/api.auth.$'
 
 const LoginRoute = LoginRouteImport.update({
@@ -65,6 +68,21 @@ const ApiProfileRoute = ApiProfileRouteImport.update({
   path: '/api/profile',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiBookingRoute = ApiBookingRouteImport.update({
+  id: '/api/booking',
+  path: '/api/booking',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiBookingCreateRoute = ApiBookingCreateRouteImport.update({
+  id: '/create',
+  path: '/create',
+  getParentRoute: () => ApiBookingRoute,
+} as any)
+const ApiBookingBookingIdRoute = ApiBookingBookingIdRouteImport.update({
+  id: '/$bookingId',
+  path: '/$bookingId',
+  getParentRoute: () => ApiBookingRoute,
+} as any)
 const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
   id: '/api/auth/$',
   path: '/api/auth/$',
@@ -75,6 +93,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRouteWithChildren
   '/login': typeof LoginRoute
+  '/api/booking': typeof ApiBookingRouteWithChildren
   '/api/profile': typeof ApiProfileRoute
   '/dashboard/create-booking': typeof DashboardCreateBookingRoute
   '/dashboard/danger-zone': typeof DashboardDangerZoneRoute
@@ -82,10 +101,13 @@ export interface FileRoutesByFullPath {
   '/dashboard/update-profile': typeof DashboardUpdateProfileRoute
   '/dashboard/': typeof DashboardIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/api/booking/$bookingId': typeof ApiBookingBookingIdRoute
+  '/api/booking/create': typeof ApiBookingCreateRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
+  '/api/booking': typeof ApiBookingRouteWithChildren
   '/api/profile': typeof ApiProfileRoute
   '/dashboard/create-booking': typeof DashboardCreateBookingRoute
   '/dashboard/danger-zone': typeof DashboardDangerZoneRoute
@@ -93,12 +115,15 @@ export interface FileRoutesByTo {
   '/dashboard/update-profile': typeof DashboardUpdateProfileRoute
   '/dashboard': typeof DashboardIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/api/booking/$bookingId': typeof ApiBookingBookingIdRoute
+  '/api/booking/create': typeof ApiBookingCreateRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRouteWithChildren
   '/login': typeof LoginRoute
+  '/api/booking': typeof ApiBookingRouteWithChildren
   '/api/profile': typeof ApiProfileRoute
   '/dashboard/create-booking': typeof DashboardCreateBookingRoute
   '/dashboard/danger-zone': typeof DashboardDangerZoneRoute
@@ -106,6 +131,8 @@ export interface FileRoutesById {
   '/dashboard/update-profile': typeof DashboardUpdateProfileRoute
   '/dashboard/': typeof DashboardIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/api/booking/$bookingId': typeof ApiBookingBookingIdRoute
+  '/api/booking/create': typeof ApiBookingCreateRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -113,6 +140,7 @@ export interface FileRouteTypes {
     | '/'
     | '/dashboard'
     | '/login'
+    | '/api/booking'
     | '/api/profile'
     | '/dashboard/create-booking'
     | '/dashboard/danger-zone'
@@ -120,10 +148,13 @@ export interface FileRouteTypes {
     | '/dashboard/update-profile'
     | '/dashboard/'
     | '/api/auth/$'
+    | '/api/booking/$bookingId'
+    | '/api/booking/create'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/login'
+    | '/api/booking'
     | '/api/profile'
     | '/dashboard/create-booking'
     | '/dashboard/danger-zone'
@@ -131,11 +162,14 @@ export interface FileRouteTypes {
     | '/dashboard/update-profile'
     | '/dashboard'
     | '/api/auth/$'
+    | '/api/booking/$bookingId'
+    | '/api/booking/create'
   id:
     | '__root__'
     | '/'
     | '/dashboard'
     | '/login'
+    | '/api/booking'
     | '/api/profile'
     | '/dashboard/create-booking'
     | '/dashboard/danger-zone'
@@ -143,12 +177,15 @@ export interface FileRouteTypes {
     | '/dashboard/update-profile'
     | '/dashboard/'
     | '/api/auth/$'
+    | '/api/booking/$bookingId'
+    | '/api/booking/create'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   DashboardRoute: typeof DashboardRouteWithChildren
   LoginRoute: typeof LoginRoute
+  ApiBookingRoute: typeof ApiBookingRouteWithChildren
   ApiProfileRoute: typeof ApiProfileRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
 }
@@ -218,6 +255,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiProfileRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/booking': {
+      id: '/api/booking'
+      path: '/api/booking'
+      fullPath: '/api/booking'
+      preLoaderRoute: typeof ApiBookingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/booking/create': {
+      id: '/api/booking/create'
+      path: '/create'
+      fullPath: '/api/booking/create'
+      preLoaderRoute: typeof ApiBookingCreateRouteImport
+      parentRoute: typeof ApiBookingRoute
+    }
+    '/api/booking/$bookingId': {
+      id: '/api/booking/$bookingId'
+      path: '/$bookingId'
+      fullPath: '/api/booking/$bookingId'
+      preLoaderRoute: typeof ApiBookingBookingIdRouteImport
+      parentRoute: typeof ApiBookingRoute
+    }
     '/api/auth/$': {
       id: '/api/auth/$'
       path: '/api/auth/$'
@@ -248,10 +306,25 @@ const DashboardRouteWithChildren = DashboardRoute._addFileChildren(
   DashboardRouteChildren,
 )
 
+interface ApiBookingRouteChildren {
+  ApiBookingBookingIdRoute: typeof ApiBookingBookingIdRoute
+  ApiBookingCreateRoute: typeof ApiBookingCreateRoute
+}
+
+const ApiBookingRouteChildren: ApiBookingRouteChildren = {
+  ApiBookingBookingIdRoute: ApiBookingBookingIdRoute,
+  ApiBookingCreateRoute: ApiBookingCreateRoute,
+}
+
+const ApiBookingRouteWithChildren = ApiBookingRoute._addFileChildren(
+  ApiBookingRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   DashboardRoute: DashboardRouteWithChildren,
   LoginRoute: LoginRoute,
+  ApiBookingRoute: ApiBookingRouteWithChildren,
   ApiProfileRoute: ApiProfileRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
 }

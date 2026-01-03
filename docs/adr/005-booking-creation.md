@@ -85,14 +85,11 @@ const [formData, setFormData] = useState({
 - ✅ Helpful contextual information
 
 ### Neutral
-- ⚠️ No slot/calendar integration yet (future enhancement)
-- ⚠️ No advanced scheduling options (recurring, etc.)
 - ⚠️ No integration with payment smart contracts yet
 - ⚠️ No template system for common session types
 - ⚠️ No bulk creation capabilities
 
 ### Future Considerations
-- Add calendar integration for availability slots
 - Implement smart contract interaction for payments
 - Add session templates for common use cases
 - Support for recurring sessions
@@ -103,6 +100,9 @@ const [formData, setFormData] = useState({
 - Integration with video conferencing tools
 - Add cancellation policy configuration
 - Implement automatic scheduling rules
+- Bulk availability editing (copy one day to another)
+- Timezone awareness
+- Holiday/blackout dates
 
 ## Technical Implementation
 
@@ -195,6 +195,103 @@ For PAID and COMMITMENT types:
 - USDC/USDT use 6 decimal places
 - Price stored as string to preserve precision
 - Input type="number" with step="0.000001"
+
+## Availability Scheduling (v2.0)
+
+### Overview
+Mentors can now set availability schedules for each day of the week with customizable time slots, allowing mentees to book sessions only during available times.
+
+### Database Schema
+**New Table:** `mentor_availability`
+- `id` (TEXT, Primary Key)
+- `mentorId` (TEXT, FK to mentor_profile)
+- `dayOfWeek` (INTEGER, 0-6 representing Sunday-Saturday)
+- `startTime` (TIME, start time in HH:MM format)
+- `endTime` (TIME, end time in HH:MM format)
+- `duration` (INTEGER, 15/30/45 minutes)
+- `timeBreak` (INTEGER, 5/10/15 minutes)
+- `isActive` (BOOLEAN, default true)
+- `createdAt`, `updatedAt` (TIMESTAMP)
+
+### API Implementation
+**Endpoint:** POST `/api/booking/create`
+**Request Body:**
+```typescript
+{
+  session: {
+    title: string,
+    description: string,
+    type: 'FREE' | 'PAID' | 'COMMITMENT',
+    token?: string,
+    price?: string,
+    duration: number,
+    timeBreak: number,
+  },
+  availability: [
+    {
+      dayOfWeek: number,
+      startTime: string,
+      endTime: string,
+      duration: number,
+      timeBreak: number,
+    }
+  ]
+}
+```
+
+### UI Components
+**New Section:** "Availability Schedule" (with Calendar icon)
+
+**Features:**
+- 7-day grid layout (Sunday through Saturday)
+- Checkbox to enable/disable each day
+- For enabled days:
+  - Start time input (type="time")
+  - End time input (type="time")
+  - Duration dropdown (15, 30, 45 minutes)
+  - Time break dropdown (5, 10, 15 minutes)
+
+**Default Schedule:**
+- Monday-Friday: Enabled, 09:00-17:00, 30 min duration, 5 min break
+- Saturday-Sunday: Disabled
+
+### Validation Rules
+- Day of week: 0-6 (Sunday-Saturday)
+- Time format: HH:MM (24-hour format)
+- Start time < end time
+- Duration: must be one of [15, 30, 45]
+- Time break: must be one of [5, 10, 15]
+
+### State Management
+```typescript
+const [availability, setAvailability] = useState([
+  { dayOfWeek: 1, enabled: true, startTime: '09:00', endTime: '17:00', duration: '30', timeBreak: '5' },
+  // ... 6 more days
+])
+```
+
+### Submission Flow
+1. User completes session details form
+2. User configures availability for desired days
+3. Form submission sends both session and availability data
+4. Server validates availability data
+5. Session and availability records created in database
+6. User redirected to dashboard with success message
+
+### Positive Consequences
+- ✅ Flexible per-day scheduling
+- ✅ Customizable time slots
+- ✅ Consistent with existing form patterns
+- ✅ Clear visual feedback
+- ✅ Default values reduce setup time
+- ✅ Comprehensive validation
+
+### Future Enhancements
+- Bulk availability editing (copy one day to another)
+- Recurring availability patterns
+- Timezone awareness
+- Holiday/blackout dates
+- Buffer time between bookings
 
 ## Accessibility Features
 - Proper label associations

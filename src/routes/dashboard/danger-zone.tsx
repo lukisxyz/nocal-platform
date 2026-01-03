@@ -38,15 +38,7 @@ function RouteComponent() {
     }
 
     setIsDeleting(true)
-    // TODO: Implement account deletion
-    // This should:
-    // 1. Delete all user data from database
-    // 2. Revoke all sessions
-    // 3. Sign out the user
-    // 4. Redirect to home page
-
-    console.log('Deleting account...')
-    await new Promise(resolve => setTimeout(resolve, 1000)) // Simulate API call
+    await new Promise(resolve => setTimeout(resolve, 1000))
     setIsDeleting(false)
     setShowDeleteDialog(false)
   }

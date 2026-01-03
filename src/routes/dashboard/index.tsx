@@ -13,7 +13,6 @@ export const Route = createFileRoute('/dashboard/')({
 })
 
 function RouteComponent() {
-  // Mock data - will be replaced with real data from database
   const stats = {
     totalSessions: 0,
     totalRevenue: 0,
@@ -41,7 +40,6 @@ function RouteComponent() {
           </div>
         </div>
 
-        {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <Card className="bg-white border-gray-200">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
@@ -90,7 +88,6 @@ function RouteComponent() {
           </Card>
         </div>
 
-        {/* Booking Sessions List */}
         <Card className="bg-white border-gray-200">
           <CardHeader>
             <CardTitle className="text-gray-900">Your Booking Sessions</CardTitle>
@@ -112,13 +109,11 @@ function RouteComponent() {
               </div>
             ) : (
               <div className="space-y-4">
-                {/* Session items would go here */}
               </div>
             )}
           </CardContent>
         </Card>
 
-        {/* Quick Actions */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
           <Card className="bg-white border-gray-200">
             <CardHeader>

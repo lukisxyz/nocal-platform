@@ -18,7 +18,7 @@ export function LottieAnimation({
     fetch(animationPath)
       .then(response => response.json())
       .then(data => setAnimationData(data))
-      .catch(error => console.error('Error fetching animation:', error));
+      .catch(error => console.error(error));
   }, [animationPath]);
 
   if (!animationData) {

@@ -1,4 +1,3 @@
-// Professional fields for mentors
 export const PROFESSIONAL_FIELDS = [
   'Software Engineering',
   'Product Management',
@@ -36,7 +35,6 @@ export const PROFESSIONAL_FIELDS = [
 
 export type ProfessionalField = typeof PROFESSIONAL_FIELDS[number];
 
-// Booking types
 export const BOOKING_TYPES = {
   FREE: 'FREE',
   PAID: 'PAID',
@@ -45,7 +43,6 @@ export const BOOKING_TYPES = {
 
 export type BookingType = typeof BOOKING_TYPES[keyof typeof BOOKING_TYPES];
 
-// Token types
 export const TOKEN_TYPES = {
   USDC: 'USDC',
   USDT: 'USDT',
@@ -55,13 +52,10 @@ export const TOKEN_TYPES = {
 
 export type TokenType = typeof TOKEN_TYPES[keyof typeof TOKEN_TYPES];
 
-// Session durations
 export const SESSION_DURATIONS = [15, 30, 45] as const;
 
-// Time breaks
 export const TIME_BREAKS = [5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60] as const;
 
-// Booking statuses
 export const BOOKING_STATUS = {
   PENDING: 'pending',
   CONFIRMED: 'confirmed',

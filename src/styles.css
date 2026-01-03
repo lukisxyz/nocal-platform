@@ -1,6 +1,5 @@
 @import "tailwindcss";
 
-/* Atkinson Hyperlegible Next Font Faces */
 @font-face {
   font-family: 'Atkinson Hyperlegible Next';
   src: url('/fonts/AtkinsonHyperlegibleNext-Regular.ttf') format('truetype');
@@ -105,6 +104,9 @@
   font-display: swap;
 }
 
+html {
+   scroll-behavior: smooth;
+}
 
 body {
   @apply m-0;
@@ -232,5 +234,28 @@ code {
 @layer base {
   body {
     letter-spacing: var(--tracking-normal);
+  }
+}
+
+@layer utilities {
+  .hover-underline-animation {
+    display: inline-block;
+    position: relative;
+  }
+  .hover-underline-animation::after {
+    content: '';
+    position: absolute;
+    width: 100%;
+    transform: scaleX(0);
+    height: 3.5px;
+    bottom: 0;
+    left: 0;
+    background-color: #212121;
+    transform-origin: bottom right;
+    transition: transform 0.25s ease-out;
+  }
+  .hover-underline-animation:hover::after {
+    transform: scaleX(1);
+    transform-origin: bottom left;
   }
 }

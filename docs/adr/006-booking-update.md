@@ -181,6 +181,60 @@ const handleDelete = async () => {
 }
 ```
 
+### Availability Scheduling Updates (v2.0)
+
+**New Feature:** Edit availability schedule alongside session details.
+
+**Implementation Details:**
+
+**Data Loading:**
+- GET `/api/booking/$bookingId` fetches session with availability array
+- useBookingSession hook loads data
+- useEffect populates form and availability state
+
+**Update Process:**
+```typescript
+updateSession.mutate({
+  sessionId: bookingId,
+  data: {
+    session: {
+      title: formData.title,
+      description: formData.description,
+      type: formData.type,
+      token: formData.token,
+      price: formData.price,
+      duration: parseInt(formData.duration),
+      timeBreak: parseInt(formData.timeBreak),
+      isActive,
+    },
+    availability: enabledDays.map(day => ({
+      dayOfWeek: day.dayOfWeek,
+      startTime: day.startTime,
+      endTime: day.endTime,
+      duration: parseInt(day.duration),
+      timeBreak: parseInt(day.timeBreak),
+    })),
+  },
+})
+```
+
+**Server-Side Behavior:**
+- If availability array provided: deletes all existing availability for mentor
+- Then inserts new availability records
+- Atomic operation (all or nothing)
+
+**UI Features:**
+- Pre-filled availability schedule from database
+- Toggle days on/off
+- Edit time slots and durations per day
+- Same UI pattern as create page
+- Consistent with create-booking experience
+
+**State Management:**
+- Separate availability state array
+- useEffect syncs availability when session data loads
+- Individual day handlers for enable/disable and field updates
+
 ### Data Loading (Future Enhancement)
 ```typescript
 useEffect(() => {

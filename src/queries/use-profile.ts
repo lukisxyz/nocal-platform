@@ -60,9 +60,7 @@ export function useUpdateProfile() {
       return response.json()
     },
     onSuccess: (data) => {
-      // Update the profile query cache with the updated data
       queryClient.setQueryData(['profile'], data)
-      // Also invalidate to ensure consistency
       queryClient.invalidateQueries({ queryKey: ['profile'] })
     },
   })

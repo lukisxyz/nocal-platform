@@ -97,7 +97,6 @@ function RouteComponent() {
     }
   }
 
-  // Show error state if profile failed to load
   if (profileError) {
     return (
       <div className="min-h-screen bg-background p-8">

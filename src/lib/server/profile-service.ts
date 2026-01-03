@@ -12,12 +12,11 @@ export interface ProfileData {
 }
 
 function generateUsernameFromName(name: string): string {
-  // Convert to lowercase, remove special characters, replace spaces with underscores
   return name
     .toLowerCase()
     .trim()
-    .replace(/[^a-z0-9\s]/g, '') // Remove special characters
-    .replace(/\s+/g, '_') // Replace spaces with underscores
+    .replace(/[^a-z0-9\s]/g, '')
+    .replace(/\s+/g, '_')
 }
 
 export async function getProfile(userId: string) {
@@ -27,7 +26,6 @@ export async function getProfile(userId: string) {
 }
 
 export async function upsertProfile(userId: string, data: ProfileData) {
-  // If username is not provided or empty, generate it from name
   const username = data.username || generateUsernameFromName(data.name)
 
   const result = await db

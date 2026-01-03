@@ -1,9 +1,13 @@
 import { SiweButton } from '@/components/derived/siwe-button'
 import { createFileRoute } from '@tanstack/react-router'
 import { LottieAnimation } from '@/components/derived/lottie-animation';
+import { loginMiddleware } from '@/lib/auth-middleware';
 
 export const Route = createFileRoute('/login')({
   component: RouteComponent,
+  server: {
+    middleware: [loginMiddleware],
+  },
 })
 
 function RouteComponent() {
