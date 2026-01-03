@@ -35,16 +35,18 @@ jobs:
           VITE_USDC_TOKEN_ADDRESS: ${{ secrets.VITE_USDC_TOKEN_ADDRESS }}
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
 
-      - name: Prepare deployment package
-        run: |
-          mkdir -p deployment-package
-          cp -r .output deployment-package/
-          cp package.json deployment-package/
-          cp pnpm-lock.yaml deployment-package/
-          cp .env.production deployment-package/ 2>/dev/null || echo "No production env file" # Create if doesn't exist
-          tar -czf nocal-platform.tar.gz -C deployment-package .
+      - name: Deploy build to VPS via SCP
+        uses: appleboy/scp-action@v0.1.5
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ secrets.VPS_PORT || 22 }}
+          source: '.output/*'
+          target: '/var/www/nocal/.output'
+          overwrite: true
 
-      - name: Deploy to VPS via SSH
+      - name: Deploy to VPS via SSH - Setup
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.VPS_HOST }}
@@ -57,31 +59,12 @@ jobs:
             # Ensure proper ownership
             sudo chown -R $USER:$USER /var/www/nocal
 
-            # Add git safe directory
-            git config --global --add safe.directory /var/www/nocal
-
             # Backup current version
             if [ -d .output ]; then
               sudo cp -r .output .output.backup.$(date +%Y%m%d_%H%M%S)
             fi
 
-            # Pull latest changes
-            git fetch origin master
-            git reset --hard origin/master
-
-            # Ensure proper ownership after git operations
-            sudo chown -R $USER:$USER /var/www/nocal
-
-            # Install dependencies if package.json changed
-            if [ package.json -nt .last_deps_install ]; then
-              pnpm install --frozen-lockfile
-              touch .last_deps_install
-            fi
-
-            # Build application
-            pnpm build
-
-            # Ensure proper ownership of build output
+            # Ensure ownership after SCP upload
             sudo chown -R $USER:$USER /var/www/nocal
 
             # Restart service
