@@ -1,7 +1,9 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { authMiddleware } from '@/lib/auth-middleware'
 import { Link, useRouter } from '@tanstack/react-router'
-import { useState, useEffect } from 'react'
+import { useEffect } from 'react'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -9,6 +11,7 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { PROFESSIONAL_FIELDS } from '@/lib/constants'
+import { profileSchema, type ProfileFormData } from '@/lib/validations'
 import { ArrowLeft, Loader2 } from 'lucide-react'
 import { useProfile, useUpdateProfile } from '@/queries/use-profile'
 import { toast } from 'sonner'
@@ -49,51 +52,53 @@ function RouteComponent() {
   const { data: profile, isLoading: isProfileLoading, error: profileError } = useProfile()
   const updateProfileMutation = useUpdateProfile()
 
-  const [formData, setFormData] = useState({
-    username: '',
-    name: '',
-    bio: '',
-    professionalField: '',
-    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC',
+  const form = useForm<ProfileFormData>({
+    resolver: zodResolver(profileSchema),
+    defaultValues: {
+      username: '',
+      name: '',
+      bio: '',
+      professionalField: '' as any,
+      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC',
+    },
   })
+
+  const { register, handleSubmit, setValue, watch, formState: { errors } } = form
 
   useEffect(() => {
     if (profile) {
-      setFormData({
-        username: profile.username || '',
-        name: profile.name || '',
-        bio: profile.bio || '',
-        professionalField: profile.professionalField || '',
-        timezone: profile.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC',
-      })
+      setValue('username', profile.username || '')
+      setValue('name', profile.name || '')
+      setValue('bio', profile.bio || '')
+      setValue('professionalField', (profile.professionalField || '') as any)
+      setValue('timezone', profile.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC')
     }
-  }, [profile])
+  }, [profile, setValue])
 
-  const handleInputChange = (field: string, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }))
-  }
+  const watchedName = watch('name')
+  const watchedUsername = watch('username')
 
-  const handleUserName = () => {
-    if (formData.username.length > 5) return;
-    const generatedUsername = formData.name
-      .toLowerCase()
-      .trim()
-      .replace(/[^a-z0-9\s]/g, '')
-      .replace(/\s+/g, '_')
-    setFormData(prev => ({ ...prev, username: generatedUsername }))
-  }
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const onSubmit = async (data: ProfileFormData) => {
     try {
-      await updateProfileMutation.mutateAsync(formData)
+      await updateProfileMutation.mutateAsync(data)
       toast.success('Profile updated successfully!')
       setTimeout(() => {
         router.navigate({ to: '/dashboard' })
       }, 1000)
     } catch (error) {
       toast.error('Failed to update profile')
-      console.error('Error updating profile:', error)
+    }
+  }
+
+  const handleUserName = () => {
+    if (watchedUsername && watchedUsername.length > 5) return
+    const generatedUsername = watchedName
+      ?.toLowerCase()
+      .trim()
+      .replace(/[^a-z0-9\s]/g, '')
+      .replace(/\s+/g, '_')
+    if (generatedUsername) {
+      setValue('username', generatedUsername)
     }
   }
 
@@ -145,17 +150,18 @@ function RouteComponent() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-6">
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
               <div className="space-y-2">
                 <Label htmlFor="username">Username</Label>
                 <Input
                   id="username"
                   type="text"
                   placeholder="Enter your unique username"
-                  value={formData.username}
-                  onChange={(e) => handleInputChange('username', e.target.value)}
-                  required
+                  {...register('username')}
                 />
+                {errors.username && (
+                  <p className="text-sm text-destructive">{errors.username.message}</p>
+                )}
                 <p className="text-xs text-muted-foreground">
                   Your unique identifier. Will be auto-generated from your name if left empty.
                 </p>
@@ -167,11 +173,12 @@ function RouteComponent() {
                   id="name"
                   type="text"
                   placeholder="Enter your full name"
-                  value={formData.name}
-                  onBlur={() => handleUserName()}
-                  onChange={(e) => handleInputChange('name', e.target.value)}
-                  required
+                  {...register('name')}
+                  onBlur={handleUserName}
                 />
+                {errors.name && (
+                  <p className="text-sm text-destructive">{errors.name.message}</p>
+                )}
               </div>
 
               <div className="space-y-2">
@@ -179,13 +186,14 @@ function RouteComponent() {
                 <Textarea
                   id="bio"
                   placeholder="Tell mentees about yourself, your experience, and what you can help with..."
-                  value={formData.bio}
-                  onChange={(e) => handleInputChange('bio', e.target.value)}
                   className="min-h-[120px]"
-                  required
+                  {...register('bio')}
                 />
+                {errors.bio && (
+                  <p className="text-sm text-destructive">{errors.bio.message}</p>
+                )}
                 <p className="text-xs text-muted-foreground">
-                  {formData.bio.length}/500 characters
+                  {watch('bio')?.length || 0}/500 characters
                 </p>
               </div>
 
@@ -194,9 +202,8 @@ function RouteComponent() {
                   Professional Field
                 </Label>
                 <Select
-                  key={formData.professionalField}
-                  value={formData.professionalField}
-                  onValueChange={(value) => handleInputChange('professionalField', value)}
+                  value={watch('professionalField')}
+                  onValueChange={(value) => setValue('professionalField', value as any)}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select your professional field" />
@@ -212,6 +219,9 @@ function RouteComponent() {
                     ))}
                   </SelectContent>
                 </Select>
+                {errors.professionalField && (
+                  <p className="text-sm text-destructive">{errors.professionalField.message}</p>
+                )}
               </div>
 
               <div className="space-y-2">
@@ -219,10 +229,11 @@ function RouteComponent() {
                 <Input
                   id="timezone"
                   type="text"
-                  value={formData.timezone}
-                  onChange={(e) => handleInputChange('timezone', e.target.value)}
-                  required
+                  {...register('timezone')}
                 />
+                {errors.timezone && (
+                  <p className="text-sm text-destructive">{errors.timezone.message}</p>
+                )}
                 <p className="text-xs text-muted-foreground">
                   Your timezone for scheduling sessions
                 </p>

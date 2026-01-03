@@ -2,6 +2,8 @@ import { createFileRoute } from '@tanstack/react-router'
 import { authMiddleware } from '@/lib/auth-middleware'
 import { Link } from '@tanstack/react-router'
 import { useState } from 'react'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -15,6 +17,7 @@ import {
 } from '@/components/ui/dialog'
 import { ArrowLeft, AlertTriangle } from 'lucide-react'
 import { useDeleteAccount } from '@/queries/use-account-mutations'
+import { deleteAccountSchema, type DeleteAccountFormData } from '@/lib/validations'
 import { toast } from 'sonner'
 
 export const Route = createFileRoute('/dashboard/danger-zone')({
@@ -26,28 +29,32 @@ export const Route = createFileRoute('/dashboard/danger-zone')({
 
 function RouteComponent() {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
-  const [confirmationText, setConfirmationText] = useState('')
 
   const deleteAccountMutation = useDeleteAccount()
+
+  const form = useForm<DeleteAccountFormData>({
+    resolver: zodResolver(deleteAccountSchema),
+    defaultValues: {
+      confirmation: '',
+    },
+  })
+
+  const { register, handleSubmit, formState: { errors }, reset } = form
 
   const handleDeleteClick = () => {
     setShowDeleteDialog(true)
   }
 
-  const handleConfirmDelete = async () => {
-    if (confirmationText !== 'I delete this account') {
-      toast.error('Please type "I delete this account" to confirm')
-      return
-    }
-
+  const onSubmit = handleSubmit(async (data) => {
     try {
       await deleteAccountMutation.mutateAsync()
       setShowDeleteDialog(false)
       toast.success('Account deleted successfully')
+      reset()
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Failed to delete account')
     }
-  }
+  })
 
   return (
     <div className="min-h-screen bg-gray-50 p-8">
@@ -134,12 +141,14 @@ function RouteComponent() {
             <div className="space-y-2">
               <Input
                 type="text"
-                value={confirmationText}
-                onChange={(e) => setConfirmationText(e.target.value)}
                 placeholder='Type "I delete this account"'
                 className="bg-white border-gray-300 text-gray-900"
                 disabled={deleteAccountMutation.isPending}
+                {...register('confirmation')}
               />
+              {errors.confirmation && (
+                <p className="text-sm text-destructive">{errors.confirmation.message}</p>
+              )}
             </div>
           </div>
 
@@ -153,8 +162,8 @@ function RouteComponent() {
             </Button>
             <Button
               variant="destructive"
-              onClick={handleConfirmDelete}
-              disabled={confirmationText !== 'I delete this account' || deleteAccountMutation.isPending}
+              onClick={onSubmit}
+              disabled={deleteAccountMutation.isPending}
             >
               {deleteAccountMutation.isPending ? 'Deleting...' : 'Delete Account'}
             </Button>

@@ -1,7 +1,9 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { authMiddleware } from '@/lib/auth-middleware'
 import { Link } from '@tanstack/react-router'
-import { useState, useEffect } from 'react'
+import { useEffect, useState } from 'react'
+import { useForm, useFieldArray } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -19,20 +21,11 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { BOOKING_TYPES, TOKEN_TYPES, SESSION_DURATIONS, TIME_BREAKS } from '@/lib/constants'
+import { updateBookingSchema, type UpdateBookingFormData, DAYS_OF_WEEK, deleteBookingSchema, type DeleteBookingFormData } from '@/lib/validations'
 import { useBookingSession } from '@/queries/use-booking-sessions'
 import { useUpdateBookingSession, useDeleteBookingSession } from '@/queries/use-booking-mutations'
 import { ArrowLeft, DollarSign, Gift, CreditCard, Coins, AlertTriangle, Calendar } from 'lucide-react'
 import { toast } from 'sonner'
-
-const DAYS_OF_WEEK = [
-  { value: 0, label: 'Sunday' },
-  { value: 1, label: 'Monday' },
-  { value: 2, label: 'Tuesday' },
-  { value: 3, label: 'Wednesday' },
-  { value: 4, label: 'Thursday' },
-  { value: 5, label: 'Friday' },
-  { value: 6, label: 'Saturday' },
-]
 
 export const Route = createFileRoute('/dashboard/update-booking/$bookingId')({
   component: RouteComponent,
@@ -43,46 +36,55 @@ export const Route = createFileRoute('/dashboard/update-booking/$bookingId')({
 
 function RouteComponent() {
   const { bookingId } = Route.useParams()
-  const [showDeleteDialog, setShowDeleteDialog] = useState(false)
-  const [confirmationText, setConfirmationText] = useState('')
-  const [isActive, setIsActive] = useState(true)
-
-  const [formData, setFormData] = useState({
-    title: '1:1 Career Guidance Session',
-    description: 'Get personalized career advice and guidance on your professional journey.',
-    type: 'PAID',
-    token: 'USDC',
-    price: '50.000000',
-    duration: '30',
-    timeBreak: '5',
-  })
-
-  const [availability, setAvailability] = useState([
-    { dayOfWeek: 0, enabled: false, startTime: '09:00', endTime: '17:00', duration: '30', timeBreak: '5' },
-    { dayOfWeek: 1, enabled: false, startTime: '09:00', endTime: '17:00', duration: '30', timeBreak: '5' },
-    { dayOfWeek: 2, enabled: false, startTime: '09:00', endTime: '17:00', duration: '30', timeBreak: '5' },
-    { dayOfWeek: 3, enabled: false, startTime: '09:00', endTime: '17:00', duration: '30', timeBreak: '5' },
-    { dayOfWeek: 4, enabled: false, startTime: '09:00', endTime: '17:00', duration: '30', timeBreak: '5' },
-    { dayOfWeek: 5, enabled: false, startTime: '09:00', endTime: '17:00', duration: '30', timeBreak: '5' },
-    { dayOfWeek: 6, enabled: false, startTime: '09:00', endTime: '17:00', duration: '30', timeBreak: '5' },
-  ])
-
   const { data: session } = useBookingSession(bookingId)
   const updateSession = useUpdateBookingSession()
   const deleteSession = useDeleteBookingSession()
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false)
+
+  const form = useForm<UpdateBookingFormData>({
+    resolver: zodResolver(updateBookingSchema),
+    defaultValues: {
+      title: '',
+      description: '',
+      type: 'FREE' as any,
+      token: 'USDC' as any,
+      price: '',
+      duration: '30',
+      timeBreak: '5',
+      isActive: true,
+      availability: [
+        { dayOfWeek: 0, enabled: false, startTime: '09:00', endTime: '17:00', duration: '30', timeBreak: '5' },
+        { dayOfWeek: 1, enabled: false, startTime: '09:00', endTime: '17:00', duration: '30', timeBreak: '5' },
+        { dayOfWeek: 2, enabled: false, startTime: '09:00', endTime: '17:00', duration: '30', timeBreak: '5' },
+        { dayOfWeek: 3, enabled: false, startTime: '09:00', endTime: '17:00', duration: '30', timeBreak: '5' },
+        { dayOfWeek: 4, enabled: false, startTime: '09:00', endTime: '17:00', duration: '30', timeBreak: '5' },
+        { dayOfWeek: 5, enabled: false, startTime: '09:00', endTime: '17:00', duration: '30', timeBreak: '5' },
+        { dayOfWeek: 6, enabled: false, startTime: '09:00', endTime: '17:00', duration: '30', timeBreak: '5' },
+      ],
+    },
+  })
+
+  const { register, handleSubmit, watch, setValue, control, formState: { errors } } = form
+
+  const { fields } = useFieldArray({
+    control,
+    name: 'availability',
+  })
+
+  const watchedType = watch('type')
+  const watchedDuration = watch('duration')
+  const watchedTimeBreak = watch('timeBreak')
 
   useEffect(() => {
     if (session) {
-      setFormData({
-        title: session.title,
-        description: session.description,
-        type: session.type,
-        token: session.token || '',
-        price: session.price || '',
-        duration: session.duration.toString(),
-        timeBreak: session.timeBreak.toString(),
-      })
-      setIsActive(session.isActive)
+      setValue('title', session.title)
+      setValue('description', session.description)
+      setValue('type', session.type as any)
+      setValue('token', (session.token || 'USDC') as any)
+      setValue('price', session.price || '')
+      setValue('duration', session.duration.toString())
+      setValue('timeBreak', session.timeBreak.toString())
+      setValue('isActive', session.isActive)
 
       if (session.availability && session.availability.length > 0) {
         const updatedAvailability = [
@@ -109,58 +111,37 @@ function RouteComponent() {
           }
         })
 
-        setAvailability(updatedAvailability)
+        updatedAvailability.forEach((day, index) => {
+          setValue(`availability.${index}`, day)
+        })
       }
     }
-  }, [session])
+  }, [session, setValue])
 
   useEffect(() => {
-    if (formData.duration && formData.timeBreak) {
-      setAvailability(prev => prev.map(day => ({
-        ...day,
-        duration: formData.duration,
-        timeBreak: formData.timeBreak,
-      })))
+    if (watchedDuration && watchedTimeBreak) {
+      fields.forEach((field, index) => {
+        setValue(`availability.${index}.duration`, watchedDuration)
+        setValue(`availability.${index}.timeBreak`, watchedTimeBreak)
+      })
     }
-  }, [formData.duration, formData.timeBreak])
+  }, [watchedDuration, watchedTimeBreak, fields, setValue])
 
-  const handleInputChange = (field: string, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }))
-  }
-
-  const handleAvailabilityChange = (dayOfWeek: number, field: string, value: string) => {
-    setAvailability(prev => prev.map(day =>
-      day.dayOfWeek === dayOfWeek
-        ? { ...day, [field]: value }
-        : day
-    ))
-  }
-
-  const handleToggleDay = (dayOfWeek: number) => {
-    setAvailability(prev => prev.map(day =>
-      day.dayOfWeek === dayOfWeek
-        ? { ...day, enabled: !day.enabled }
-        : day
-    ))
-  }
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-
-    const enabledDays = availability.filter(day => day.enabled)
+  const onSubmit = (data: UpdateBookingFormData) => {
+    const enabledDays = data.availability.filter(day => day.enabled)
 
     updateSession.mutate({
       sessionId: bookingId!,
       data: {
         session: {
-          title: formData.title,
-          description: formData.description,
-          type: formData.type as 'FREE' | 'PAID' | 'COMMITMENT',
-          token: formData.type !== 'FREE' ? formData.token : undefined,
-          price: formData.type !== 'FREE' ? formData.price : undefined,
-          duration: parseInt(formData.duration),
-          timeBreak: parseInt(formData.timeBreak),
-          isActive,
+          title: data.title,
+          description: data.description,
+          type: data.type,
+          token: data.type !== 'FREE' ? data.token : undefined,
+          price: data.type !== 'FREE' ? data.price : undefined,
+          duration: parseInt(data.duration),
+          timeBreak: parseInt(data.timeBreak),
+          isActive: data.isActive,
         },
         availability: enabledDays.map(day => ({
           dayOfWeek: day.dayOfWeek,
@@ -173,20 +154,25 @@ function RouteComponent() {
     })
   }
 
-  const handleConfirmDelete = async () => {
-    if (confirmationText !== 'DELETE') {
-      toast.error('Please type "DELETE" to confirm')
-      return
-    }
+  const deleteForm = useForm<DeleteBookingFormData>({
+    resolver: zodResolver(deleteBookingSchema),
+    defaultValues: {
+      confirmation: '',
+    },
+  })
 
+  const { register: registerDelete, handleSubmit: handleSubmitDelete, formState: { errors: deleteErrors }, reset: resetDelete } = deleteForm
+
+  const handleConfirmDelete = handleSubmitDelete(async () => {
     try {
       await deleteSession.mutateAsync(bookingId!)
       setShowDeleteDialog(false)
       toast.success('Booking session deleted successfully')
+      resetDelete()
     } catch (error) {
       toast.error('Failed to delete booking session. Please try again.')
     }
-  }
+  })
 
   const bookingTypeInfo = {
     FREE: {
@@ -224,7 +210,7 @@ function RouteComponent() {
           </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
           <Card className="bg-white border-gray-200">
             <CardHeader>
               <CardTitle className="text-gray-900">Session Status</CardTitle>
@@ -244,8 +230,8 @@ function RouteComponent() {
                 </div>
                 <Switch
                   id="active"
-                  checked={isActive}
-                  onCheckedChange={setIsActive}
+                  checked={watch('isActive')}
+                  onCheckedChange={(checked) => setValue('isActive', checked)}
                 />
               </div>
             </CardContent>
@@ -266,10 +252,10 @@ function RouteComponent() {
                     <button
                       key={type}
                       type="button"
-                      onClick={() => handleInputChange('type', type)}
+                      onClick={() => setValue('type', type as any)}
                       className={`
                         p-4 rounded-lg border-2 transition-all text-left
-                        ${formData.type === type ? info.color : 'bg-white border-gray-300 hover:border-gray-400'}
+                        ${watchedType === type ? info.color : 'bg-white border-gray-300 hover:border-gray-400'}
                       `}
                     >
                       <div className="flex items-center gap-2 mb-2">
@@ -281,6 +267,9 @@ function RouteComponent() {
                   )
                 })}
               </div>
+              {errors.type && (
+                <p className="text-sm text-destructive mt-2">{errors.type.message}</p>
+              )}
             </CardContent>
           </Card>
 
@@ -298,11 +287,12 @@ function RouteComponent() {
                   id="title"
                   type="text"
                   placeholder="e.g., 1:1 Career Guidance Session"
-                  value={formData.title}
-                  onChange={(e) => handleInputChange('title', e.target.value)}
                   className="bg-gray-50 border-gray-300 text-gray-900"
-                  required
+                  {...register('title')}
                 />
+                {errors.title && (
+                  <p className="text-sm text-destructive">{errors.title.message}</p>
+                )}
               </div>
 
               <div className="space-y-2">
@@ -310,19 +300,20 @@ function RouteComponent() {
                 <Textarea
                   id="description"
                   placeholder="Describe what you'll cover in this session, who it's for, and what mentees can expect..."
-                  value={formData.description}
-                  onChange={(e) => handleInputChange('description', e.target.value)}
                   className="bg-gray-50 border-gray-300 text-gray-900 min-h-[120px]"
-                  required
+                  {...register('description')}
                 />
+                {errors.description && (
+                  <p className="text-sm text-destructive">{errors.description.message}</p>
+                )}
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
                   <Label htmlFor="duration" className="text-gray-800">Duration (minutes)</Label>
                   <Select
-                    value={formData.duration}
-                    onValueChange={(value) => handleInputChange('duration', value)}
+                    value={watch('duration')}
+                    onValueChange={(value) => setValue('duration', value)}
                   >
                     <SelectTrigger className="bg-gray-50 border-gray-300 text-gray-900">
                       <SelectValue placeholder="Select duration" />
@@ -339,13 +330,16 @@ function RouteComponent() {
                       ))}
                     </SelectContent>
                   </Select>
+                  {errors.duration && (
+                    <p className="text-sm text-destructive">{errors.duration.message}</p>
+                  )}
                 </div>
 
                 <div className="space-y-2">
                   <Label htmlFor="timeBreak" className="text-gray-800">Time Break (minutes)</Label>
                   <Select
-                    value={formData.timeBreak}
-                    onValueChange={(value) => handleInputChange('timeBreak', value)}
+                    value={watch('timeBreak')}
+                    onValueChange={(value) => setValue('timeBreak', value)}
                   >
                     <SelectTrigger className="bg-gray-50 border-gray-300 text-gray-900">
                       <SelectValue placeholder="Select time break" />
@@ -362,12 +356,15 @@ function RouteComponent() {
                       ))}
                     </SelectContent>
                   </Select>
+                  {errors.timeBreak && (
+                    <p className="text-sm text-destructive">{errors.timeBreak.message}</p>
+                  )}
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          {formData.type && formData.type !== 'FREE' && (
+          {watchedType && watchedType !== 'FREE' && (
             <Card className="bg-white border-gray-200">
               <CardHeader>
                 <CardTitle className="text-gray-900 flex items-center gap-2">
@@ -382,8 +379,8 @@ function RouteComponent() {
                 <div className="space-y-2">
                   <Label htmlFor="token" className="text-gray-800">Token</Label>
                   <Select
-                    value={formData.token}
-                    onValueChange={(value) => handleInputChange('token', value)}
+                    value={watch('token')}
+                    onValueChange={(value) => setValue('token', value as any)}
                   >
                     <SelectTrigger className="bg-gray-50 border-gray-300 text-gray-900">
                       <SelectValue placeholder="Select token" />
@@ -395,16 +392,22 @@ function RouteComponent() {
                           value={token}
                           className="text-gray-900 focus:bg-gray-100 focus:text-gray-900"
                         >
-                          {token}
+                          <div className="flex items-center gap-2">
+                            <img src="/usd-coin-usdc-logo.svg" alt={token} className="h-5 w-5" />
+                            {token}
+                          </div>
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
+                  {errors.token && (
+                    <p className="text-sm text-destructive">{errors.token.message}</p>
+                  )}
                 </div>
 
                 <div className="space-y-2">
                   <Label htmlFor="price" className="text-gray-800">
-                    {formData.type === 'COMMITMENT' ? 'Commitment Fee Amount' : 'Price'}
+                    {watchedType === 'COMMITMENT' ? 'Commitment Fee Amount' : 'Price'}
                   </Label>
                   <div className="relative">
                     <Input
@@ -413,18 +416,18 @@ function RouteComponent() {
                       step="0.000001"
                       min="0"
                       placeholder="0.000000"
-                      value={formData.price}
-                      onChange={(e) => handleInputChange('price', e.target.value)}
-                      className="bg-gray-50 border-gray-300 text-gray-900 pl-20"
-                      required
+                      className="bg-gray-50 border-gray-300 text-gray-900 pl-24"
+                      {...register('price')}
                     />
-                    <div className="absolute left-3 top-1/2 -translate-y-1/2">
-                      <Badge variant="outline" className="text-gray-700 border-gray-300">
-                        {formData.token || 'Token'}
-                      </Badge>
+                    <div className="absolute left-3 top-1/2 -translate-y-1/2 flex items-center gap-2">
+                      <img src="/usd-coin-usdc-logo.svg" alt="USDC" className="h-6 w-6" />
+                      <span className="text-sm font-medium text-gray-700">{watch('token') || 'USDC'}</span>
                     </div>
                   </div>
-                  {formData.type === 'COMMITMENT' && (
+                  {errors.price && (
+                    <p className="text-sm text-destructive">{errors.price.message}</p>
+                  )}
+                  {watchedType === 'COMMITMENT' && (
                     <p className="text-xs text-gray-600">
                       This is a refundable deposit that will be returned to the mentee after the session is completed.
                     </p>
@@ -446,94 +449,104 @@ function RouteComponent() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {DAYS_OF_WEEK.map((day) => {
-                  const dayData = availability.find(d => d.dayOfWeek === day.value)!
+                {fields.map((field, index) => {
+                  const day = DAYS_OF_WEEK[field.dayOfWeek]
                   return (
-                    <div key={day.value} className="border border-gray-200 rounded-lg p-4">
+                    <div key={field.id} className="border border-gray-200 rounded-lg p-4">
                       <div className="flex items-center justify-between mb-4">
                         <div className="flex items-center gap-3">
                           <input
                             type="checkbox"
-                            checked={dayData.enabled}
-                            onChange={() => handleToggleDay(day.value)}
+                            {...register(`availability.${index}.enabled`)}
                             className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                           />
                           <Label className="text-gray-900 font-medium">{day.label}</Label>
                         </div>
                       </div>
 
-                      {dayData.enabled && (
-                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                          <div className="space-y-2">
-                            <Label className="text-gray-700 text-sm">Start Time</Label>
-                            <Input
-                              type="time"
-                              value={dayData.startTime}
-                              onChange={(e) => handleAvailabilityChange(day.value, 'startTime', e.target.value)}
-                              className="bg-gray-50 border-gray-300 text-gray-900"
-                            />
-                          </div>
-
-                          <div className="space-y-2">
-                            <Label className="text-gray-700 text-sm">End Time</Label>
-                            <Input
-                              type="time"
-                              value={dayData.endTime}
-                              onChange={(e) => handleAvailabilityChange(day.value, 'endTime', e.target.value)}
-                              className="bg-gray-50 border-gray-300 text-gray-900"
-                            />
-                          </div>
-
-                          <div className="space-y-2">
-                            <Label className="text-gray-700 text-sm">Duration</Label>
-                            <Select
-                              value={dayData.duration}
-                              onValueChange={(value) => handleAvailabilityChange(day.value, 'duration', value)}
-                            >
-                              <SelectTrigger className="bg-gray-50 border-gray-300 text-gray-900">
-                                <SelectValue placeholder="Duration" />
-                              </SelectTrigger>
-                              <SelectContent className="bg-gray-50 border-gray-300">
-                                {SESSION_DURATIONS.map((duration) => (
-                                  <SelectItem
-                                    key={duration}
-                                    value={duration.toString()}
-                                    className="text-gray-900 focus:bg-gray-100 focus:text-gray-900"
-                                  >
-                                    {duration} min
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          </div>
-
-                          <div className="space-y-2">
-                            <Label className="text-gray-700 text-sm">Break</Label>
-                            <Select
-                              value={dayData.timeBreak}
-                              onValueChange={(value) => handleAvailabilityChange(day.value, 'timeBreak', value)}
-                            >
-                              <SelectTrigger className="bg-gray-50 border-gray-300 text-gray-900">
-                                <SelectValue placeholder="Break" />
-                              </SelectTrigger>
-                              <SelectContent className="bg-gray-50 border-gray-300">
-                                {TIME_BREAKS.filter(tb => tb <= 15).map((timeBreak) => (
-                                  <SelectItem
-                                    key={timeBreak}
-                                    value={timeBreak.toString()}
-                                    className="text-gray-900 focus:bg-gray-100 focus:text-gray-900"
-                                  >
-                                    {timeBreak} min
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          </div>
+                      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                        <div className="space-y-2">
+                          <Label className="text-gray-700 text-sm">Start Time</Label>
+                          <Input
+                            type="time"
+                            {...register(`availability.${index}.startTime`)}
+                            className="bg-gray-50 border-gray-300 text-gray-900"
+                          />
+                          {errors.availability?.[index]?.startTime && (
+                            <p className="text-sm text-destructive">{errors.availability[index]?.startTime?.message}</p>
+                          )}
                         </div>
-                      )}
+
+                        <div className="space-y-2">
+                          <Label className="text-gray-700 text-sm">End Time</Label>
+                          <Input
+                            type="time"
+                            {...register(`availability.${index}.endTime`)}
+                            className="bg-gray-50 border-gray-300 text-gray-900"
+                          />
+                          {errors.availability?.[index]?.endTime && (
+                            <p className="text-sm text-destructive">{errors.availability[index]?.endTime?.message}</p>
+                          )}
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label className="text-gray-700 text-sm">Duration</Label>
+                          <Select
+                            value={watch(`availability.${index}.duration`)}
+                            onValueChange={(value) => setValue(`availability.${index}.duration`, value)}
+                          >
+                            <SelectTrigger className="bg-gray-50 border-gray-300 text-gray-900">
+                              <SelectValue placeholder="Duration" />
+                            </SelectTrigger>
+                            <SelectContent className="bg-gray-50 border-gray-300">
+                              {SESSION_DURATIONS.map((duration) => (
+                                <SelectItem
+                                  key={duration}
+                                  value={duration.toString()}
+                                  className="text-gray-900 focus:bg-gray-100 focus:text-gray-900"
+                                >
+                                  {duration} min
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          {errors.availability?.[index]?.duration && (
+                            <p className="text-sm text-destructive">{errors.availability[index]?.duration?.message}</p>
+                          )}
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label className="text-gray-700 text-sm">Break</Label>
+                          <Select
+                            value={watch(`availability.${index}.timeBreak`)}
+                            onValueChange={(value) => setValue(`availability.${index}.timeBreak`, value)}
+                          >
+                            <SelectTrigger className="bg-gray-50 border-gray-300 text-gray-900">
+                              <SelectValue placeholder="Break" />
+                            </SelectTrigger>
+                            <SelectContent className="bg-gray-50 border-gray-300">
+                              {TIME_BREAKS.map((timeBreak) => (
+                                <SelectItem
+                                  key={timeBreak}
+                                  value={timeBreak.toString()}
+                                  className="text-gray-900 focus:bg-gray-100 focus:text-gray-900"
+                                >
+                                  {timeBreak} min
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          {errors.availability?.[index]?.timeBreak && (
+                            <p className="text-sm text-destructive">{errors.availability[index]?.timeBreak?.message}</p>
+                          )}
+                        </div>
+                      </div>
                     </div>
                   )
                 })}
+                {errors.availability && (
+                  <p className="text-sm text-destructive">{errors.availability.message}</p>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -605,11 +618,13 @@ function RouteComponent() {
             <div className="space-y-2">
               <Input
                 type="text"
-                value={confirmationText}
-                onChange={(e) => setConfirmationText(e.target.value)}
                 placeholder='Type "DELETE"'
                 className="bg-gray-50 border-gray-300 text-gray-900"
+                {...registerDelete('confirmation')}
               />
+              {deleteErrors.confirmation && (
+                <p className="text-sm text-destructive">{deleteErrors.confirmation.message}</p>
+              )}
             </div>
           </div>
 
@@ -623,7 +638,7 @@ function RouteComponent() {
             <Button
               variant="destructive"
               onClick={handleConfirmDelete}
-              disabled={confirmationText !== 'DELETE' || deleteSession.isPending}
+              disabled={deleteSession.isPending}
             >
               {deleteSession.isPending ? 'Deleting...' : 'Delete Session'}
             </Button>
