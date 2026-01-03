@@ -16,7 +16,7 @@ function Home() {
             Smart Scheduling<br />That Actually Works
           </h1>
           <p className="text-lg md:text-xl text-gray-500 mb-7 max-w-xl mx-auto">
-            One smart booking platform. Commit and attend.
+            One mentoring platform. Commit and attend.
             <br />
             Built to honor commitment and keep access open.
           </p>
