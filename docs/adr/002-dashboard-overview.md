@@ -39,9 +39,15 @@ We implemented a dashboard overview page using TanStack Start's file-based routi
 - Danger Zone card → `/dashboard/danger-zone`
 
 **Data Handling:**
-- Mock data structure prepared for real database integration
-- Statistics object ready to be populated from queries
+- Integrated with TanStack Query for real-time data fetching
+- Uses `useBookingSessions()` hook to fetch booking sessions from `/api/booking`
+- Statistics calculated dynamically from actual data:
+  - Total Sessions: Count of all booking sessions
+  - Total Revenue: Sum of PAID/COMMITMENT session prices
+  - Pending Bookings: Count of active sessions
+- Loading and error states implemented for better UX
 - Empty state handling for new users with no sessions
+- Automatic cache invalidation and refetching
 
 ## Consequences
 
@@ -54,18 +60,16 @@ We implemented a dashboard overview page using TanStack Start's file-based routi
 - ✅ Consistent with existing authentication and routing patterns
 
 ### Neutral
-- ⚠️ Currently uses mock data (database integration pending)
-- ⚠️ Stats calculation logic needs to be implemented
-- ⚠️ No real-time updates or live data refresh
+- Stats are now calculated from real data but "Completed Sessions" still needs booking data integration
 
 ### Future Considerations
-- Add data fetching with TanStack Query
 - Implement real-time updates for booking status changes
 - Add filtering and sorting for booking sessions list
 - Include revenue charts and graphs
 - Add notifications for new bookings
 - Consider adding export functionality for analytics
 - Add quick edit capabilities directly from the list
+- Calculate "Completed Sessions" from actual booking records
 
 ## Technical Implementation
 
@@ -76,12 +80,29 @@ We implemented a dashboard overview page using TanStack Start's file-based routi
 - @/components/ui/button (Button with variants)
 - @/components/ui/badge (Badge for status indicators)
 - lucide-react (Calendar, DollarSign, Users, Clock icons)
+- @/queries/use-booking-sessions (TanStack Query hook for fetching sessions)
 ```
 
 ### State Management
-- Local component state for mock data
-- Ready for TanStack Query integration
-- Prepared for real-time updates via React Query's query invalidation
+- TanStack Query manages server state with automatic caching
+- Query client configured at app root level
+- Optimistic updates supported via queryClient.setQueryData()
+- Cache invalidation on data mutations for consistency
+- Loading and error states managed by TanStack Query
+
+### Booking Sessions List Implementation
+- Renders list of booking sessions using Card components
+- Each session displays:
+  - Title and description
+  - Status badge (Active/Inactive) using Badge component
+  - Session type (FREE/PAID/COMMITMENT)
+  - Price and token (for PAID/COMMITMENT sessions)
+  - Duration in minutes
+  - Edit button linking to `/dashboard/update-booking/:id`
+- Responsive design with space-y-4 spacing between cards
+- Empty state with call-to-action when no sessions exist
+- Loading spinner during data fetch
+- Error state with error message display
 
 ### Accessibility
 - Semantic HTML structure

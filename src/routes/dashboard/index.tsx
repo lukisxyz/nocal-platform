@@ -3,7 +3,9 @@ import { authMiddleware } from '@/lib/auth-middleware'
 import { Link } from '@tanstack/react-router'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
 import { Calendar, DollarSign, Users, Clock } from 'lucide-react'
+import { useBookingSessions } from '@/queries/use-booking-sessions'
 
 export const Route = createFileRoute('/dashboard/')({
   component: RouteComponent,
@@ -13,14 +15,19 @@ export const Route = createFileRoute('/dashboard/')({
 })
 
 function RouteComponent() {
-  const stats = {
-    totalSessions: 0,
-    totalRevenue: 0,
-    completedSessions: 0,
-    pendingBookings: 0,
-  }
+  const { data: bookingSessions, isLoading, error } = useBookingSessions()
 
-  const recentSessions = []
+  const stats = {
+    totalSessions: bookingSessions?.length || 0,
+    totalRevenue: bookingSessions?.reduce((sum, session) => {
+      if (session.type === 'PAID' || session.type === 'COMMITMENT') {
+        return sum + (parseFloat(session.price || '0'))
+      }
+      return sum
+    }, 0) || 0,
+    completedSessions: 0, // TODO: Calculate from actual booking data
+    pendingBookings: bookingSessions?.filter(s => s.isActive).length || 0,
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 p-8">
@@ -96,7 +103,17 @@ function RouteComponent() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {recentSessions.length === 0 ? (
+            {isLoading ? (
+              <div className="text-center py-12">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto mb-4"></div>
+                <p className="text-gray-600">Loading booking sessions...</p>
+              </div>
+            ) : error ? (
+              <div className="text-center py-12">
+                <div className="text-red-600 mb-2">Failed to load booking sessions</div>
+                <p className="text-gray-600 text-sm">{error.message}</p>
+              </div>
+            ) : !bookingSessions || bookingSessions.length === 0 ? (
               <div className="text-center py-12">
                 <Calendar className="mx-auto h-12 w-12 text-gray-400 mb-4" />
                 <h3 className="text-lg font-medium text-gray-900 mb-2">No booking sessions yet</h3>
@@ -109,6 +126,35 @@ function RouteComponent() {
               </div>
             ) : (
               <div className="space-y-4">
+                {bookingSessions.map((session) => (
+                  <Card key={session.id} className="border-gray-200">
+                    <CardHeader>
+                      <div className="flex justify-between items-start">
+                        <div className="flex-1">
+                          <CardTitle className="text-lg">{session.title}</CardTitle>
+                          <CardDescription className="mt-1">{session.description}</CardDescription>
+                        </div>
+                        <Badge variant={session.isActive ? "default" : "secondary"}>
+                          {session.isActive ? "Active" : "Inactive"}
+                        </Badge>
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="flex justify-between items-center">
+                        <div className="text-sm text-gray-600">
+                          <span className="font-medium">{session.type}</span>
+                          {session.price && session.token && (
+                            <span> • {session.price} {session.token}</span>
+                          )}
+                          <span> • {session.duration} min</span>
+                        </div>
+                        <Link to={`/dashboard/update-booking/${session.id}`}>
+                          <Button variant="outline" size="sm">Edit</Button>
+                        </Link>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
               </div>
             )}
           </CardContent>
