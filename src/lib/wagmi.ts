@@ -3,7 +3,7 @@ import { arbitrumSepolia } from 'viem/chains';
 
 export const config = getDefaultConfig({
   appName: 'NoCall Protocol',
-  projectId: '568d8af63aa033ff1b617ecc8a15f835',
+  projectId: import.meta.env.VITE_WALLETCONNECT_PROJECT_ID,
   chains: [arbitrumSepolia],
   ssr: true,
 });
