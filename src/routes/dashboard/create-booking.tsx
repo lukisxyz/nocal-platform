@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Badge } from '@/components/ui/badge'
-import { BOOKING_TYPES, TOKEN_TYPES, SESSION_DURATIONS, TIME_BREAKS } from '@/lib/constants'
+import { BOOKING_TYPES, SESSION_DURATIONS, TIME_BREAKS } from '@/lib/constants'
 import { useCreateBookingSession } from '@/queries/use-booking-mutations'
 import { ArrowLeft, DollarSign, Gift, CreditCard, Coins, Calendar } from 'lucide-react'
 
@@ -35,9 +35,9 @@ function RouteComponent() {
     title: '',
     description: '',
     type: '',
-    token: '',
+    token: import.meta.env.VITE_USDC_TOKEN_ADDRESS,
     price: '',
-    duration: '',
+    duration: '30',
     timeBreak: '5',
   })
 
@@ -275,25 +275,13 @@ function RouteComponent() {
               <CardContent className="space-y-6">
                 <div className="space-y-2">
                   <Label htmlFor="token" className="text-gray-700">Token</Label>
-                  <Select
-                    value={formData.token}
-                    onValueChange={(value) => handleInputChange('token', value)}
-                  >
-                    <SelectTrigger className="bg-white border-gray-300 text-gray-900">
-                      <SelectValue placeholder="Select token" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-white border-gray-300">
-                      {Object.values(TOKEN_TYPES).map((token) => (
-                        <SelectItem
-                          key={token}
-                          value={token}
-                          className="text-gray-900 focus:bg-gray-100 focus:text-gray-900"
-                        >
-                          {token}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <Input
+                    id="token"
+                    type="text"
+                    value="USDC"
+                    readOnly
+                    className="bg-gray-100 border-gray-300 text-gray-900 cursor-not-allowed"
+                  />
                 </div>
 
                 <div className="space-y-2">
@@ -314,7 +302,7 @@ function RouteComponent() {
                     />
                     <div className="absolute left-3 top-1/2 -translate-y-1/2">
                       <Badge variant="outline" className="text-gray-600 border-gray-300">
-                        {formData.token || 'Token'}
+                        USDC
                       </Badge>
                     </div>
                   </div>

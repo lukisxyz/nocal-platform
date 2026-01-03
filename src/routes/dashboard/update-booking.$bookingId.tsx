@@ -33,7 +33,7 @@ const DAYS_OF_WEEK = [
   { value: 6, label: 'Saturday' },
 ]
 
-export const Route = createFileRoute('/dashboard/update-booking')({
+export const Route = createFileRoute('/dashboard/update-booking/$bookingId')({
   component: RouteComponent,
   server: {
     middleware: [authMiddleware],
@@ -66,7 +66,7 @@ function RouteComponent() {
     { dayOfWeek: 6, enabled: false, startTime: '09:00', endTime: '17:00', duration: '30', timeBreak: '5' },
   ])
 
-  const { data: session, isLoading } = useBookingSession(bookingId)
+  const { data: session } = useBookingSession(bookingId)
   const updateSession = useUpdateBookingSession()
   const deleteSession = useDeleteBookingSession()
 
@@ -602,7 +602,6 @@ function RouteComponent() {
                 onChange={(e) => setConfirmationText(e.target.value)}
                 placeholder='Type "DELETE"'
                 className="bg-gray-50 border-gray-300 text-gray-900"
-                disabled={isDeleting}
               />
             </div>
           </div>
@@ -611,7 +610,6 @@ function RouteComponent() {
             <Button
               variant="outline"
               onClick={() => setShowDeleteDialog(false)}
-              disabled={isDeleting}
             >
               Cancel
             </Button>
