@@ -157,7 +157,10 @@ function RouteComponent() {
                           )}
                           <span> • {session.duration} min</span>
                         </div>
-                        <Link to={`/dashboard/update-booking/${session.id}`}>
+                        <Link
+                          to={`/dashboard/update-booking/$bookingId`}
+                          params={{ bookingId: session.id }}
+                        >
                           <Button variant="outline" size="sm">Edit</Button>
                         </Link>
                       </div>
